@@ -48,8 +48,9 @@ public class HttpHelper<T> {
         this(2000);
     }
 
-    protected HttpResponse sendRequest(HttpRequest request) throws Exception {
+    protected HttpResponseHandler sendRequest(HttpRequest request) throws Exception {
         CloseableHttpClient httpclient = null;
+        CloseableHttpResponse response;
         try {
             _request = request;//new HttpGet("http://httpbin.org/get");
             BasicHttpContext context = new BasicHttpContext();
@@ -68,7 +69,7 @@ public class HttpHelper<T> {
                     .build();//.createDefault(httpParams);
 
             //System.out.println("Executing request " + _request.getURI());
-            CloseableHttpResponse response = httpclient.execute((HttpGet)_request, context);
+            response = httpclient.execute((HttpGet)_request, context);
             try {
                 System.out.println("----------------------------------------");
                 System.out.println(response.getStatusLine());
@@ -85,28 +86,6 @@ public class HttpHelper<T> {
         } finally {
             httpclient.close();
         }
-    }
-
-    protected static String getResponseString(HttpResponse response){
-        InputStream responseBody = null;
-        String result = StringHelper.Empty;
-        try{
-            responseBody = response.getEntity().getContent();
-            BufferedInputStream bis = new BufferedInputStream(responseBody);
-            InputStreamReader inputStreamReader = new InputStreamReader(bis);
-            try{
-                int data = inputStreamReader.read();
-                while(data != -1){
-                    result += (char) data;
-                    data = inputStreamReader.read();
-                }
-            }
-            catch (Exception ex){       }
-            finally {
-                inputStreamReader.close();
-            }
-        }
-        catch (Exception ex){}
-        return result;
+        return new HttpResponseHandler(response);
     }
 }

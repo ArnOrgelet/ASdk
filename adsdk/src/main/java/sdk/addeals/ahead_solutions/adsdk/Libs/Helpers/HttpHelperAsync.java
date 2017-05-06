@@ -18,7 +18,7 @@ import java.util.concurrent.Future;
  * Created by ArnOr on 02/05/2017.
  */
 
-public class HttpHelperAsync<T> extends HttpHelper<T> implements Callable<HttpResponse> {
+public class HttpHelperAsync<T> extends HttpHelper<T> implements Callable<HttpResponseHandler> {
     private static ExecutorService _executor;
     private final static int POOL_SIZE = 3;
     public HttpHelperAsync(){
@@ -28,23 +28,23 @@ public class HttpHelperAsync<T> extends HttpHelper<T> implements Callable<HttpRe
     }
 
     @Override
-    public HttpResponse call() throws Exception {
+    public HttpResponseHandler call() throws Exception {
         return super.sendRequest(_request);
     }
 
     //@Override
-    protected final HttpResponse sendRequest(final HttpRequest request){
+    protected final HttpResponseHandler sendRequest(final HttpRequest request){
         this._request = request;
-        HttpResponse response = null;
+        HttpResponseHandler responseHandler = null;
         try {
-            Future<HttpResponse> async_response = _executor.submit(this);
-            response = async_response.get();
+            Future<HttpResponseHandler> async_response = _executor.submit(this);
+            responseHandler = async_response.get();
         }
         catch(Exception ex){}
         finally {
             this._request = null;
         }
-        return response;
+        return responseHandler;
     }
 
     public void get(String url){

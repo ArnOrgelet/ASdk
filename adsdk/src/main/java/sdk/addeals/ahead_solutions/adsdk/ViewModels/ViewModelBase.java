@@ -2,12 +2,16 @@ package sdk.addeals.ahead_solutions.adsdk.ViewModels;
 
 import android.net.Uri;
 import android.content.*;
+import android.opengl.Visibility;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Locale;
 import java.util.concurrent.Future;
 
+import sdk.addeals.ahead_solutions.adsdk.AbstractAdManager;
 import sdk.addeals.ahead_solutions.adsdk.AdManager;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.HttpHelper;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.HttpHelperAsync;
@@ -19,7 +23,7 @@ import sdk.addeals.ahead_solutions.adsdk.Models.CampaignsV3;
  * Created by ArnOr on 02/05/2017.
  */
 
-public abstract class ViewModelBase {
+public abstract class ViewModelBase extends AbstractAdManager{
 
     int lastCampaignIndex = 0;  // ID of the first campaign called.
     public PropertyChangeSupport propertyChanged;
@@ -28,7 +32,7 @@ public abstract class ViewModelBase {
     {
         if (propertyChanged != null)
             propertyChanged = new PropertyChangeSupport(this);
-            PropertyChanged(this, new PropertyChangedEventArgs(name));
+            //PropertyChanged(this, new PropertyChangedEventArgs(name));
     }
 
     public void addPropertyChangeListener(PropertyChangeListener listener) {
@@ -50,7 +54,7 @@ public abstract class ViewModelBase {
         {
             _country = Locale.getDefault().getCountry();
         }
-        catch (Exception) { }
+        catch (Exception ex) { }
         return _country;
     }
 
@@ -61,7 +65,7 @@ public abstract class ViewModelBase {
         {
             _language = Locale.getDefault().getLanguage();
         }
-        catch (Exception) { }
+        catch (Exception ex) { }
         return _language;
     }
 
@@ -187,22 +191,22 @@ public abstract class ViewModelBase {
 
     public Future<CampaignsV3> GetCampaignAd(String requestedAdTypes, int reqAdWidth, int reqAdHeight, int campType, boolean strictSize)
     {
-        HttpHelper httpHelper = new HttpHelper(AdManager.HTTP_QUERY_TIMEOUT);
+        HttpHelper httpHelper = new HttpHelper(/*AdManager.*/HTTP_QUERY_TIMEOUT);
         String baseURL = AdManager.AD_NETWORK_URL;
 
         switch (campType)
         {
-            case AdManager.CAMPAIGN_TYPE_BANNER: {
+            case CAMPAIGN_TYPE_BANNER: {
                 baseURL = AdManager.BANNER_ADS_BASE_URL;
                 break;
             }
 
-            case AdManager.CAMPAIGN_TYPE_INTERSTITIAL: {
+            case CAMPAIGN_TYPE_INTERSTITIAL: {
                 baseURL = AdManager.INTERSTITIAL_ADS_BASE_URL;
                 break;
             }
 
-            case AdManager.CAMPAIGN_TYPE_VIDEO_REWARDED: {
+            case CAMPAIGN_TYPE_VIDEO_REWARDED: {
                 baseURL = AdManager.VIDEO_ADS_BASE_URL;
                 break;
             }
@@ -212,12 +216,18 @@ public abstract class ViewModelBase {
         campaignV3URL = campaignV3URL.replace("[BASE_URL]", baseURL);
         campaignV3URL = campaignV3URL.replace("[APP_KEY]", AdManager.AppKey);
         campaignV3URL = campaignV3URL.replace("[DEVICE_ID]", AdManager.GetDeviceID());
-        campaignV3URL = campaignV3URL.replace("[DEVICE_MODEL]", WebUtility.UrlEncode(AdManager.DEVICE_MODEL));
+        try {
+            campaignV3URL = campaignV3URL.replace("[DEVICE_MODEL]", URLEncoder.encode(AdManager.DEVICE_MODEL, "UTF-8"));
+        }
+        catch(UnsupportedEncodingException ex) {}
         campaignV3URL = campaignV3URL.replace("[DEVICE_OS]", AdManager.OS_VERSION);
         campaignV3URL = campaignV3URL.replace("[LANGUAGE]", AdManager.APP_LANGUAGE);
         campaignV3URL = campaignV3URL.replace("[COUNTRY]", AdManager.APP_COUNTRY);
         campaignV3URL = campaignV3URL.replace("[SDK_VERSION]", AdManager.SDK_VERSION);
-        campaignV3URL = campaignV3URL.replace("[MOBILE_OPERATOR]", WebUtility.UrlEncode(AdManager.MOBILE_OPERATOR));
+        try {
+            campaignV3URL = campaignV3URL.replace("[MOBILE_OPERATOR", URLEncoder.encode(AdManager.MOBILE_OPERATOR, "UTF-8"));
+        }
+        catch(UnsupportedEncodingException ex) {}
         campaignV3URL = campaignV3URL.replace("[APP_UID]", AdManager.APP_UID);
         campaignV3URL = campaignV3URL.replace("[APP_CONNECTION]", AdManager.APP_CONNECTION);
         campaignV3URL = campaignV3URL.replace("[CAMPAIGN_TYPE]", "" + campType);
@@ -232,13 +242,13 @@ public abstract class ViewModelBase {
         String tmpSex = StringHelper.Empty;
         switch (AdManager.userSex)
         {
-            case AdManager.Sex.FEMALE:
+            case FEMALE:
             {
                 tmpSex = "f";
                 break;
             }
 
-            case AdManager.Sex.MALE:
+            case MALE:
             {
                 tmpSex = "m";
                 break;
@@ -262,7 +272,7 @@ public abstract class ViewModelBase {
         if (!this._adWasClicked)
         {
             this._adWasClicked = true;
-            HttpHelper httpHelper = new HttpHelper(AdManager.HTTP_QUERY_TIMEOUT);
+            HttpHelper httpHelper = new HttpHelper(/*AbstractAdManager.*/HTTP_QUERY_TIMEOUT);
             String campLink = this.BuildClickURL(this.CampaignLinkURL, reqAdWidth, reqAdHeight);
             String result = await httpHelper.GetStringFromWeb(campLink + "&rand=" + DateTime.UtcNow.ToFileTimeUtc());
         }
@@ -273,10 +283,15 @@ public abstract class ViewModelBase {
         clickURL = clickURL.replace("%deviceID%", AdManager.GetDeviceID());
         clickURL = clickURL.replace("%advertiserUID%", ADVERTISER_UID);
         clickURL = clickURL.replace("%OS%", AdManager.OS_VERSION);
-        clickURL = clickURL.replace("%deviceModel%", WebUtility.UrlEncode(DEVICE_MODEL));
-        clickURL = clickURL.replace("%fingerprint%", String.Empty);
+        try {
+            clickURL = clickURL.replace("%deviceModel%", URLEncoder.encode(DEVICE_MODEL, "UTF-8"));
+        }catch(UnsupportedEncodingException ex) {}
+        clickURL = clickURL.replace("%fingerprint%", StringHelper.Empty);
         clickURL = clickURL.replace("%sdkv%", AdManager.SDK_VERSION);
-        clickURL = clickURL.replace("%mop%", WebUtility.UrlEncode(MOBILE_OPERATOR));
+        try {
+            clickURL = clickURL.replace("%mop%", URLEncoder.encode(MOBILE_OPERATOR, "UTF-8"));
+        }
+        catch(UnsupportedEncodingException ex) {}
         clickURL = clickURL.replace("%appuid%", APP_UID);
         clickURL = clickURL.replace("%conn%", APP_CONNECTION);
         clickURL = clickURL.replace("%usragent%", AdManager.USER_AGENT); // ADDED.
@@ -284,17 +299,17 @@ public abstract class ViewModelBase {
         clickURL = clickURL.replace("%adh%", "" + (int)(reqAdHeight));
         clickURL = clickURL.replace("%adw%", "" + (int)(reqAdWidth));
         clickURL = clickURL.replace("%age%", "" + AdManager.userAge);
-        clickURL = clickURL.replace("%moment%", "" + String.Empty);
+        clickURL = clickURL.replace("%moment%", "" + StringHelper.Empty);
         String tmpSex = StringHelper.Empty;
         switch (AdManager.userSex)
         {
-            case AdManager.Sex.FEMALE:
+            case FEMALE:
             {
                 tmpSex = "f";
                 break;
             }
 
-            case AdManager.Sex.MALE:
+            case MALE:
             {
                 tmpSex = "m";
                 break;
@@ -316,32 +331,36 @@ public abstract class ViewModelBase {
 
         //EXTRA OPTIONAL FILL-IN
         webURL = webURL.replace("%conn%", APP_CONNECTION);
-        webURL = webURL.replace("%mop%", WebUtility.UrlEncode(MOBILE_OPERATOR));
+        try {
+            webURL = webURL.replace("%mop%", URLEncoder.encode(MOBILE_OPERATOR, "UTF-8"));
+        }
+        catch(UnsupportedEncodingException ex) {}
         webURL = webURL.replace("%appuid%", APP_UID);
-        webURL = webURL.replace("%fingerprint%", String.Empty);
+        webURL = webURL.replace("%fingerprint%", StringHelper.Empty);
         webURL = webURL.replace("%deviceID%", AdManager.GetDeviceID());
-        webURL = webURL.replace("%deviceModel%", WebUtility.UrlEncode(DEVICE_MODEL));
+        try {
+            webURL = webURL.replace("%mop%", URLEncoder.encode(MOBILE_OPERATOR, "UTF-8"));
+        }
+        catch(UnsupportedEncodingException ex) {}
         webURL = webURL.replace("%adh%", "" + (int)(reqAdHeight));
         webURL = webURL.replace("%adw%", "" + (int)(reqAdWidth));
         webURL = webURL.replace("%age%", "" + AdManager.userAge);
-        webURL = webURL.replace("%moment%", "" + String.Empty);
-
-#if DEBUG
-
-            webURL = webURL.replace(AdManager.VIDEO_PLAYER_RELEASE_MODE, AdManager.VIDEO_PLAYER_DEBUG_MODE);
-
-#endif
-
-        String tmpSex = String.Empty; // Default.
+        webURL = webURL.replace("%moment%", "" + StringHelper.Empty);
+/*
+    if(DEBUG_MODE) {
+        webURL = webURL.replace(AdManager.VIDEO_PLAYER_RELEASE_MODE, AdManager.VIDEO_PLAYER_DEBUG_MODE);
+    }
+*/
+        String tmpSex = StringHelper.Empty; // Default.
         switch (AdManager.userSex)
         {
-            case AdManager.Sex.FEMALE:
+            case FEMALE:
             {
                 tmpSex = "f";
                 break;
             }
 
-            case AdManager.Sex.MALE:
+            case MALE:
             {
                 tmpSex = "m";
                 break;
@@ -368,22 +387,22 @@ public abstract class ViewModelBase {
         displayURL = displayURL.replace("%adw%", "" + (int)(reqAdWidth));
         displayURL = displayURL.replace("%age%", "" + AdManager.userAge);
 
-#if DEBUG
+/*
+    if(DEBUG_MODE) {
+        displayURL = displayURL.replace(AdManager.VIDEO_PLAYER_RELEASE_MODE, AdManager.VIDEO_PLAYER_DEBUG_MODE);
+    }
+*/
 
-            displayURL = displayURL.replace(AdManager.VIDEO_PLAYER_RELEASE_MODE, AdManager.VIDEO_PLAYER_DEBUG_MODE);
-
-#endif
-
-        String tmpSex = String.Empty; // Default.
+        String tmpSex = StringHelper.Empty; // Default.
         switch (AdManager.userSex)
         {
-            case AdManager.Sex.FEMALE:
+            case FEMALE:
             {
                 tmpSex = "f";
                 break;
             }
 
-            case AdManager.Sex.MALE:
+            case MALE:
             {
                 tmpSex = "m";
                 break;
@@ -394,8 +413,8 @@ public abstract class ViewModelBase {
     }
 
     //region  process clicks
-    booleanean IsAPIClickURL;
-    booleanean ClickOpensBrowser;
+    boolean IsAPIClickURL;
+    boolean ClickOpensBrowser;
     //endregion
 
     private Uri _impressionPixelSrc;

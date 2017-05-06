@@ -1,6 +1,36 @@
 package sdk.addeals.ahead_solutions.adsdk;
 
+import android.content.Context;
+import android.net.NetworkInfo;
+import android.util.Base64;
+
+import com.google.android.gms.ads.identifier.AdvertisingIdClient;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.util.Date;
+import java.util.concurrent.Future;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.DeviceSettingsHelper;
+import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.HttpHelper;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.StringHelper;
+import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.TimeHelper;
+import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.UserAgentHelper;
 
 /**
  * Created by ArnOr on 02/05/2017.
@@ -20,9 +50,9 @@ public class AdManager extends AbstractAdManager  {
         public static Popup adPopup = null;
 
         // Demographics
-         static Sex userSex = Sex.UNKNOWN;
-         static int userAge = -1;
-         static String location = StringHelper.Empty;
+        public static Sex userSex = Sex.UNKNOWN;
+        public static int userAge = -1;
+        public static String location = StringHelper.Empty;
 
         public enum BannerAdSizes
         {
@@ -112,9 +142,9 @@ public class AdManager extends AbstractAdManager  {
 
     private static String EncodeTo64(String toEncode)
     {
-        var e = Encoding.GetEncoding("utf-8");
-        byte[] toEncodeAsBytes = e.GetBytes(toEncode);
-        String returnValue = Convert.ToBase64String(toEncodeAsBytes);
+        final Charset UTF_8 = Charset.forName("UTF-8");
+        ByteBuffer toEncodeAsBytes = UTF_8.encode(toEncode);
+        String returnValue = Base64.encodeToString(toEncodeAsBytes.array(), Base64.DEFAULT);//Base64.encodeToString(toEncodeAsBytes);
         return returnValue;
     }
 
@@ -130,7 +160,7 @@ public class AdManager extends AbstractAdManager  {
     /// </summary>
     /// <param name="appID">Unique Application ID provided by AdDeals</param>
     /// <param name="appKey">Unique Application Key provided by AdDeals</param>
-    public async static Task<boolean> InitSDK(Panel layoutRoot, String appID, String appKey)
+    public static Future<Boolean> InitSDK(Panel layoutRoot, String appID, String appKey)
     {
         try
         {
@@ -142,11 +172,11 @@ public class AdManager extends AbstractAdManager  {
 
             // Initialize settings
             SettingsHelperSDK settings = new SettingsHelperSDK();
-            settings.InitSettings();
+            settings.initSettings();
             SetNetworkConnectionType(); // This is called several times to match the connection type as well as possible.
 
             // Cannot be initialized more than once / app launch (while it's in memory) or / day (so we try to notify install again and session)
-            DateTime lastLaunch = DateTime.FromFileTimeUtc((long)ApplicationData.Current.LocalSettings.Values[AbstractSettingsHelperSDK.AS20082013DATE_LAST_LAUNCH]);
+            Date lastLaunch = DateTime.FromFileTimeUtc((long)ApplicationData.Current.LocalSettings.Values[AbstractSettingsHelperSDK.AS20082013DATE_LAST_LAUNCH]);
             if (!SDKinitialized || (SDKinitialized && lastLaunch.Add(new TimeSpan(0, 12, 0, 0)) < DateTime.UtcNow)
                     || !(boolean)ApplicationData.Current.LocalSettings.Values[AbstractSettingsHelperSDK.AS20082013INSTALL_NOTIFIED])
             {
@@ -209,29 +239,29 @@ public class AdManager extends AbstractAdManager  {
         if (AdManager.DeviceKind.Equals(AdManager.DeviceType.PHONE))
         {
             link = ADDEALS_WEB_LINK;
-            String strToEncode = ADDEALS_WEB_LINK_STR_PARAMS.Replace("[APP_ID]", AppID);
-            strToEncode = strToEncode.Replace("[APP_KEY]", AppKey);
-            strToEncode = strToEncode.Replace("[DEVICE_OS]", OS_VERSION);
-            strToEncode = strToEncode.Replace("[DEVICE_MODEL]", WebUtility.UrlEncode(DEVICE_MODEL));
-            strToEncode = strToEncode.Replace("[SDK_VERSION]", SDK_VERSION);
-            strToEncode = strToEncode.Replace("[MOBILE_OPERATOR]", WebUtility.UrlEncode(MOBILE_OPERATOR));
-            strToEncode = strToEncode.Replace("[LANGUAGE]", APP_LANGUAGE);
-            strToEncode = strToEncode.Replace("[COUNTRY]", APP_COUNTRY);
-            strToEncode = strToEncode.Replace("[APP_UID]", APP_UID);
-            strToEncode = strToEncode.Replace("[APP_CONNECTION]", APP_CONNECTION);
-            strToEncode = strToEncode.Replace("[ADVERTISER_UID]", ADVERTISER_UID);
-            strToEncode = strToEncode.Replace("[DEVICE_ID]", WebUtility.UrlEncode(GetDeviceID()));
-            strToEncode = strToEncode + "&" + DateTime.UtcNow.ToFileTimeUtc();
+            String strToEncode = ADDEALS_WEB_LINK_STR_PARAMS.replace("[APP_ID]", AppID);
+            strToEncode = strToEncode.replace("[APP_KEY]", AppKey);
+            strToEncode = strToEncode.replace("[DEVICE_OS]", OS_VERSION);
+            strToEncode = strToEncode.replace("[DEVICE_MODEL]", WebUtility.UrlEncode(DEVICE_MODEL));
+            strToEncode = strToEncode.replace("[SDK_VERSION]", SDK_VERSION);
+            strToEncode = strToEncode.replace("[MOBILE_OPERATOR]", WebUtility.UrlEncode(MOBILE_OPERATOR));
+            strToEncode = strToEncode.replace("[LANGUAGE]", APP_LANGUAGE);
+            strToEncode = strToEncode.replace("[COUNTRY]", APP_COUNTRY);
+            strToEncode = strToEncode.replace("[APP_UID]", APP_UID);
+            strToEncode = strToEncode.replace("[APP_CONNECTION]", APP_CONNECTION);
+            strToEncode = strToEncode.replace("[ADVERTISER_UID]", ADVERTISER_UID);
+            strToEncode = strToEncode.replace("[DEVICE_ID]", WebUtility.UrlEncode(GetDeviceID()));
+            strToEncode = strToEncode + "&" + TimeHelper.getUTC()//.ToFileTimeUtc();
 
             String strEncoded = EncodeTo64(strToEncode);
-            link = link.Replace("[STR]", strEncoded);
+            link = link.replace("[STR]", strEncoded);
         }
         else
         {
-            link = ADDEALS_WEB_LINK_GENERIC.Replace("[APP_ID]", AppID);
-            link = link.Replace("[APP_KEY]", AppKey);
-            link = link.Replace("[ADVERTISER_UID]", ADVERTISER_UID);
-            link = link.Replace("[SDK_VERSION]", SDK_VERSION);
+            link = ADDEALS_WEB_LINK_GENERIC.replace("[APP_ID]", AppID);
+            link = link.replace("[APP_KEY]", AppKey);
+            link = link.replace("[ADVERTISER_UID]", ADVERTISER_UID);
+            link = link.replace("[SDK_VERSION]", SDK_VERSION);
         }
 
         return link;
@@ -242,7 +272,7 @@ public class AdManager extends AbstractAdManager  {
     /// </summary>
     public async static void ShowWebWall()
     {
-        await Launcher.LaunchUriAsync(new Uri(GetWallWebLink()));
+        await Launcher.LaunchUriAsync(new URI(GetWallWebLink()));
     }
 
     /// <summary>
@@ -250,7 +280,7 @@ public class AdManager extends AbstractAdManager  {
     /// </summary>
     /// <param name="mainPageLayout"></param>
     /// <returns></returns>
-    public async static Task<AdDealsPopupAd> GetPopupAd(Panel mainPageLayout, AdManager.AdKind adKindSupported)
+    public static Future<AdDealsPopupAd> GetPopupAd(Panel mainPageLayout, AdManager.AdKind adKindSupported)
     {
             //region old
         //ManualResetEvent wait = new ManualResetEvent(false);
@@ -398,12 +428,12 @@ public class AdManager extends AbstractAdManager  {
             //OS_VERSION = "8.1";
             //String test2 = easClientDeviceInformation.OperatingSystem;
             OS_VERSION = "";
-            APP_COUNTRY = new GeographicRegion().CodeTwoLetter;
-            APP_LANGUAGE = new Language(GlobalizationPreferences.Languages[0]).LanguageTag.Split('-')[0];
+            APP_COUNTRY = DeviceSettingsHelper.getCountryCode();
+            APP_LANGUAGE = DeviceSettingsHelper.getLanguageCode();//new Language(GlobalizationPreferences.Languages[0]).LanguageTag.Split('-')[0];
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            if (String.IsNullOrEmpty(APP_LANGUAGE))
+            if (StringHelper.isNullOrEmpty(APP_LANGUAGE))
             {
                 APP_LANGUAGE = "en";
             }
@@ -423,33 +453,74 @@ public class AdManager extends AbstractAdManager  {
 
         try
         {
-            MOBILE_OPERATOR = String.Empty;   // Unable to get with Windows 8.1.
+            MOBILE_OPERATOR = StringHelper.Empty;   // Unable to get with Windows 8.1.
         }
         catch (Exception) { }
 
         try
         {
-            ADVERTISER_UID = Windows.System.UserProfile.AdvertisingManager.AdvertisingId;
+            AdvertisingIdClient.Info idInfo = null;
+            try {
+                idInfo = AdvertisingIdClient.getAdvertisingIdInfo(getApplicationContext());
+            } catch (GooglePlayServicesNotAvailableException e) {
+                e.printStackTrace();
+            } catch (GooglePlayServicesRepairableException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try{
+                ADVERTISER_UID = idInfo.getId();
+            }catch (NullPointerException e){
+                e.printStackTrace();
+            }
         }
         catch (Exception) { }
 
         try
         {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+
+            try {
+                // use the factory to create a documentbuilder
+                DocumentBuilder builder = factory.newDocumentBuilder();
+
+                // create a new document from input source
+                FileInputStream fis = new FileInputStream("AndroidManifest.xml");
+                InputSource is = new InputSource(fis);
+                Document doc = builder.parse(is);
+
+                // get the first element
+                Element document = doc.getDocumentElement();
+                NodeList applicationTag = document.getElementsByTagName("application");
+                Node applicationNode = null;
+                if(applicationTag.getLength() > 0)
+                {
+                    applicationNode = applicationTag.item(0);// android:sharedUserId
+                    Attr attr = (Attr) applicationNode.getAttributes().getNamedItem("android:sharedUserId"); //not is what needed!
+                    if (attr != null) {
+                        APP_UID = attr.getValue();
+                        //APP_UID = APP_UID.replace("{", "");
+                        //APP_UID = APP_UID.replace("}", "");
+                    }
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            /*
             APP_UID = (from manifest in
             XElement.Load("WMAppManifest.xml").Descendants("App")
-            select manifest).SingleOrDefault().Attribute("ProductID").Value;
-            APP_UID = APP_UID.Replace("{", "");
-            APP_UID = APP_UID.Replace("}", "");
+            select manifest).SingleOrDefault().Attribute("ProductID").Value;*/
         }
         catch (Exception) { }
 
         try
         {
-            if (USER_AGENT.ToLower().Contains("windows phone") && easClientDeviceInformation.OperatingSystem.ToLower().Equals("windowsphone"))
+            if (USER_AGENT.toLowerCase().contains("windows phone") && easClientDeviceInformation.OperatingSystem.ToLower().Equals("windowsphone"))
             {
                 DeviceKind = DeviceType.PHONE;
             }
-            else if (USER_AGENT.ToLower().Contains("windows") && easClientDeviceInformation.OperatingSystem.ToLower().Equals("windows"))
+            else if (USER_AGENT.toLowerCase().contains("windows") && easClientDeviceInformation.OperatingSystem.ToLower().Equals("windows"))
             {
                 DeviceKind = DeviceType.TABLET_PC;
             }
@@ -480,8 +551,9 @@ public class AdManager extends AbstractAdManager  {
     {
         // Default value.
         APP_CONNECTION = "CELLULAR_UNKNOWN";
-
-        ConnectionProfile currentconnection = NetworkInformation.GetInternetConnectionProfile();
+        this.co
+        Context.getSystemService(Context.CONNECTIVITY_SERVICE)
+        ConnectionProfile currentconnection = NetworkInfo. .DetailedState();
         if (currentconnection != null) {
             //  return "";
             switch (currentconnection.NetworkAdapter.IanaInterfaceType)
@@ -526,21 +598,21 @@ public class AdManager extends AbstractAdManager  {
             //long test = long.Parse("" + ApplicationData.Current.LocalSettings.Values[AbstractSettingsHelperSDK.ADDEALS20150915CLICK_ID]);
             // Call web service to inform server that the app has been launched...
             HttpHelper httpHelper = new HttpHelper(HTTP_QUERY_TIMEOUT);
-            String sessionURL = ADDEALS_NOTIFY_SESSION_URL_v3.Replace("[APP_ID]", AppID);
-            sessionURL = sessionURL.Replace("[APP_KEY]", AppKey);
-            sessionURL = sessionURL.Replace("[DEVICE_ID]", GetDeviceID());
-            sessionURL = sessionURL.Replace("[DEVICE_MODEL]", WebUtility.UrlEncode(DEVICE_MODEL));
-            sessionURL = sessionURL.Replace("[DEVICE_OS]", OS_VERSION);
-            sessionURL = sessionURL.Replace("[LANGUAGE]", APP_LANGUAGE);
-            sessionURL = sessionURL.Replace("[COUNTRY]", APP_COUNTRY);
-            sessionURL = sessionURL.Replace("[SDK_VERSION]", SDK_VERSION);
-            sessionURL = sessionURL.Replace("[MOBILE_OPERATOR]", WebUtility.UrlEncode(MOBILE_OPERATOR));
-            sessionURL = sessionURL.Replace("[APP_CONNECTION]", APP_CONNECTION);
-            sessionURL = sessionURL.Replace("[ADVERTISER_UID]", ADVERTISER_UID);                   // Windows Phone 8.1 ? Can be get!
-            sessionURL = sessionURL.Replace("[USR_AGENT]", USER_AGENT);                            // Windows Phone 8.1 ? Can be get!
-            sessionURL = sessionURL.Replace("[ADDEALS_DOWNLOAD_ID]", "" + AdManager.ADDEALS_DOWNLOAD_ID);     // Windows Phone 8.1 ? Can be get!
-            sessionURL = sessionURL.Replace("[ADDEALS_USER_ID]", "" + AdManager.ADDEALS_USER_ID);              // Windows Phone 8.1 ? Can be get!
-            sessionURL = sessionURL.Replace("[IS_FIRST_SESSION]", "" + sessionTypeID);
+            String sessionURL = ADDEALS_NOTIFY_SESSION_URL_v3.replace("[APP_ID]", AppID);
+            sessionURL = sessionURL.replace("[APP_KEY]", AppKey);
+            sessionURL = sessionURL.replace("[DEVICE_ID]", GetDeviceID());
+            sessionURL = sessionURL.replace("[DEVICE_MODEL]", WebUtility.UrlEncode(DEVICE_MODEL));
+            sessionURL = sessionURL.replace("[DEVICE_OS]", OS_VERSION);
+            sessionURL = sessionURL.replace("[LANGUAGE]", APP_LANGUAGE);
+            sessionURL = sessionURL.replace("[COUNTRY]", APP_COUNTRY);
+            sessionURL = sessionURL.replace("[SDK_VERSION]", SDK_VERSION);
+            sessionURL = sessionURL.replace("[MOBILE_OPERATOR]", WebUtility.UrlEncode(MOBILE_OPERATOR));
+            sessionURL = sessionURL.replace("[APP_CONNECTION]", APP_CONNECTION);
+            sessionURL = sessionURL.replace("[ADVERTISER_UID]", ADVERTISER_UID);                   // Windows Phone 8.1 ? Can be get!
+            sessionURL = sessionURL.replace("[USR_AGENT]", USER_AGENT);                            // Windows Phone 8.1 ? Can be get!
+            sessionURL = sessionURL.replace("[ADDEALS_DOWNLOAD_ID]", "" + AdManager.ADDEALS_DOWNLOAD_ID);     // Windows Phone 8.1 ? Can be get!
+            sessionURL = sessionURL.replace("[ADDEALS_USER_ID]", "" + AdManager.ADDEALS_USER_ID);              // Windows Phone 8.1 ? Can be get!
+            sessionURL = sessionURL.replace("[IS_FIRST_SESSION]", "" + sessionTypeID);
             sessionURL = sessionURL + "&" + DateTime.UtcNow.ToFileTimeUtc();                       // Reload new deal (caching issue)!
 
             // Get ADSession result...
@@ -571,24 +643,24 @@ public class AdManager extends AbstractAdManager  {
         HttpHelper httpHelper = new HttpHelper(HTTP_QUERY_TIMEOUT);
         try
         {
-            String installURL = ADDEALS_NOTIFY_INSTALL.Replace("[APP_ID]", AppID);
-            installURL = installURL.Replace("[APP_KEY]", AppKey);
-            installURL = installURL.Replace("[DEVICE_ID]", GetDeviceID());
-            installURL = installURL.Replace("[DEVICE_MODEL]", WebUtility.UrlEncode(DEVICE_MODEL));
-            installURL = installURL.Replace("[DEVICE_OS]", OS_VERSION);
-            installURL = installURL.Replace("[LANGUAGE]", APP_LANGUAGE);
-            installURL = installURL.Replace("[COUNTRY]", APP_COUNTRY);
-            installURL = installURL.Replace("[FINGERPRINT]", String.Empty);
-            installURL = installURL.Replace("[SDK_VERSION]", SDK_VERSION);
-            installURL = installURL.Replace("[MOBILE_OPERATOR]", WebUtility.UrlEncode(MOBILE_OPERATOR));
-            installURL = installURL.Replace("[APP_UID]", APP_UID);
-            installURL = installURL.Replace("[APP_CONNECTION]", APP_CONNECTION);
-            installURL = installURL.Replace("[ADVERTISER_UID]", ADVERTISER_UID);
-            installURL = installURL.Replace("[USR_AGENT]", USER_AGENT);
+            String installURL = ADDEALS_NOTIFY_INSTALL.replace("[APP_ID]", AppID);
+            installURL = installURL.replace("[APP_KEY]", AppKey);
+            installURL = installURL.replace("[DEVICE_ID]", GetDeviceID());
+            installURL = installURL.replace("[DEVICE_MODEL]", WebUtility.UrlEncode(DEVICE_MODEL));
+            installURL = installURL.replace("[DEVICE_OS]", OS_VERSION);
+            installURL = installURL.replace("[LANGUAGE]", APP_LANGUAGE);
+            installURL = installURL.replace("[COUNTRY]", APP_COUNTRY);
+            installURL = installURL.replace("[FINGERPRINT]", String.Empty);
+            installURL = installURL.replace("[SDK_VERSION]", SDK_VERSION);
+            installURL = installURL.replace("[MOBILE_OPERATOR]", WebUtility.UrlEncode(MOBILE_OPERATOR));
+            installURL = installURL.replace("[APP_UID]", APP_UID);
+            installURL = installURL.replace("[APP_CONNECTION]", APP_CONNECTION);
+            installURL = installURL.replace("[ADVERTISER_UID]", ADVERTISER_UID);
+            installURL = installURL.replace("[USR_AGENT]", USER_AGENT);
 
             try
             {
-                AppInstall conversion = await httpHelper.GetDataFromJsonWeb<AppInstall>(installURL);
+                AppInstall conversion = wait HttpHelper<AppInstall>.GetDataFromJsonWeb(installURL);
                 if (conversion != null)
                 {
                     ApplicationData.Current.LocalSettings.Values[AbstractSettingsHelperSDK.AS20082013INSTALL_NOTIFIED] = true;
@@ -647,27 +719,27 @@ public class AdManager extends AbstractAdManager  {
             else return false;
         }*/
 
-     static AdDealsPopupAdViewModel GetPopupViewModel(AdKind adkind)
+     static AdDealsPopupAdViewModel getPopupViewModel(AdKind adkind)
     {
         switch (adkind)
         {
-            case AdKind.REWARDEDVIDEOAD:
+            case REWARDEDVIDEOAD:
             {
-                return popupRewardedVideoAdViewModel ?? (popupRewardedVideoAdViewModel = new AdDealsPopupAdViewModel());
+                return ( popupRewardedVideoAdViewModel != null) ?  popupRewardedVideoAdViewModel : new AdDealsPopupAdViewModel();
             }
 
             default:
             {
-                return popupAdViewModel ?? (popupAdViewModel = new AdDealsPopupAdViewModel());
+                return ( popupAdViewModel != null) ?  popupAdViewModel : new AdDealsPopupAdViewModel();
             }
         }
     }
 
-    static AdDealsPopupAd GetAdDealsSquare(AdKind adkind)
+    static AdDealsPopupAd getAdDealsSquare(AdKind adkind)
     {
         switch (adkind)
         {
-            case AdKind.REWARDEDVIDEOAD:
+            case REWARDEDVIDEOAD:
             {
                 return adDealsSquareRewardedVideos;
             }
@@ -698,42 +770,40 @@ public class AdManager extends AbstractAdManager  {
         return _disableHeaderWebLink;
     }
 
-        private set
+    private void setDisableHeaderWebLink(boolean value)
+    {
+        if (_disableHeaderWebLink != value)
         {
-            if (_disableHeaderWebLink != value)
-            {
-                _disableHeaderWebLink = value;
-            }
+            _disableHeaderWebLink = value;
         }
     }
 
-    private static String _appKey = String.Empty;
+    private static String _appKey = StringHelper.Empty;
     public static String getAppKey()
     {
         return _appKey;
     }
 
-        private set
+    private void setAppKey(String value)
+    {
+        if (_appKey != value)
         {
-            if (_appKey != value)
-            {
-                _appKey = value;
-            }
+            _appKey = value;
         }
     }
 
-    private static String _appID = String.Empty;
+    private static String _appID = StringHelper.Empty;
     public static String getAppID()
     {
         return _appID;
     }
 
-        private set
+
+    private void setAppID(String value)
+    {
+        if (_appID != value)
         {
-            if (_appID != value)
-            {
-                _appID = value;
-            }
+            _appID = value;
         }
     }
 
@@ -743,22 +813,21 @@ public class AdManager extends AbstractAdManager  {
         return _deviceKind;
     }
 
-        private set
+    private void setDeviceKind(DeviceType value)
+    {
+        if (_deviceKind != value)
         {
-            if (_deviceKind != value)
-            {
-                _deviceKind = value;
-            }
+            _deviceKind = value;
         }
     }
 
         #endregion
 
-     static async void OpenMarketPlace(String webLink)
+    static async void OpenMarketPlace(String webLink)
     {
         try
         {
-            await Launcher.LaunchUriAsync(new Uri(webLink));
+            await Launcher.LaunchUriAsync(new URI(webLink));
         }
         catch (Exception) { }
     }
