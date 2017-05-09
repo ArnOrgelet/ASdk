@@ -2,7 +2,8 @@ package sdk.addeals.ahead_solutions.adsdk.ViewModels;
 
 import android.net.Uri;
 import android.content.*;
-import android.opengl.Visibility;
+
+import org.joda.time.DateTime;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -214,10 +215,10 @@ public abstract class ViewModelBase extends AbstractAdManager{
             }
         }
 
-        String campaignV3URL = AdManager.ADDEALS_CAMPAIGN_URL_v3.replace("[APP_ID]", AdManager.getAppID()AppID);
+        String campaignV3URL = AdManager.ADDEALS_CAMPAIGN_URL_v3.replace("[APP_ID]", AdManager.getAppID());
         campaignV3URL = campaignV3URL.replace("[BASE_URL]", baseURL);
         campaignV3URL = campaignV3URL.replace("[APP_KEY]", AdManager.getAppKey());
-        campaignV3URL = campaignV3URL.replace("[DEVICE_ID]", AdManager.GetDeviceID());
+        campaignV3URL = campaignV3URL.replace("[DEVICE_ID]", AdManager.getDeviceID());
         try {
             campaignV3URL = campaignV3URL.replace("[DEVICE_MODEL]", URLEncoder.encode(AdManager.DEVICE_MODEL, "UTF-8"));
         }
@@ -261,7 +262,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
         if (strictSize) campaignV3URL = campaignV3URL.replace("[STRICT_SIZE]", "" + 1);
         else campaignV3URL = campaignV3URL.replace("[STRICT_SIZE]", "" + 0);
         campaignV3URL = campaignV3URL.replace("[PREFETCH]", "1");                                           // STARTING SDK v2.2: Server-side, it's always PREFETCHED, meaning display is sent asynchronously when the display really occurs!!!
-        campaignV3URL = campaignV3URL + "&rand=" + TimeHelper.getUTC();//DateTime.UtcNow.ToFileTimeUtc();                         // Reload new deal (caching issue)!
+        campaignV3URL = campaignV3URL + "&rand=" + DateTime.now();//DateTime.UtcNow.ToFileTimeUtc();                         // Reload new deal (caching issue)!
 
         // "http://ads.addealsnetwork.com/addeals/REST/v3/campaigns/?format=json&aid=1932&akey=LIE2H2N2CQSB&lang=fr&country=FR&os=&ctypeid=3&sdkv=3.0&adh=900&adw=1200&duid=4f6238c63a018e0a7101b4665356af37&advuid=538035f6476666d48294808205d3a48c&mop=&conn=ETHERNET&appuid=&adkind=&adtypes=[3][7]&prefetch=1&spid=&rand=130850692134853359&usragent=%20Mozilla/5.0%20(Windows%20NT%2010.0;%20ARM;%20Trident/7.0;%20Touch;%20rv:11.0;%20IEMobile/11.0;%20NOKIA;%20Lumia%20630)%20like%20Gecko"
         return new HttpHelperAsync()
@@ -287,7 +288,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
 
      String BuildClickURL(String clickURL, int reqAdWidth, int reqAdHeight)
     {
-        clickURL = clickURL.replace("%deviceID%", AdManager.GetDeviceID());
+        clickURL = clickURL.replace("%deviceID%", AdManager.getDeviceID());
         clickURL = clickURL.replace("%advertiserUID%", ADVERTISER_UID);
         clickURL = clickURL.replace("%OS%", AdManager.OS_VERSION);
         try {
@@ -344,7 +345,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
         catch(UnsupportedEncodingException ex) {}
         webURL = webURL.replace("%appuid%", APP_UID);
         webURL = webURL.replace("%fingerprint%", StringHelper.Empty);
-        webURL = webURL.replace("%deviceID%", AdManager.GetDeviceID());
+        webURL = webURL.replace("%deviceID%", AdManager.getDeviceID());
         try {
             webURL = webURL.replace("%mop%", URLEncoder.encode(MOBILE_OPERATOR, "UTF-8"));
         }
@@ -439,17 +440,17 @@ public abstract class ViewModelBase extends AbstractAdManager{
         }
     }
 
-    private Visibility _webViewVisibility;
-    public Visibility getWebViewVisibility()
+    private /*Visibility*/ int _webViewVisibility;
+    public /*Visibility*/ int getWebViewVisibility()
     {
         return this._webViewVisibility;
     }
 
-    public void getWebViewVisibility(Visibility value)
+    public void getWebViewVisibility(/*Visibility*/ int value)
     {
         if (this._webViewVisibility != value)
         {
-            this.propertyChanged.firePropertyChange("WebViewVisibility", this._webViewVisibility value);
+            this.propertyChanged.firePropertyChange("WebView/*Visibility*/ int", this._webViewVisibility, value);
             this._webViewVisibility = value;
         }
     }

@@ -9,8 +9,8 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import java.util.concurrent;
-
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 /**
@@ -35,6 +35,8 @@ public class UserAgentHelper {
     private static String mime = "text/html";
     private static String encoding = "utf-8";
 
+    private static ExecutorService executor = Executors.newFixedThreadPool(1);
+
     protected static class WebAppInterface {
         Context mContext;
         String userAgent;
@@ -55,6 +57,7 @@ public class UserAgentHelper {
 
     public static Future<String> GetUserAgent(Context context, final ViewGroup rootElement)
     {
+        return executor.submit(() -> {
         final WebView browser = new WebView(context);
         //CompletableFuture<String> cf = new CompletableFuture<>();
         Future<String> t = null;
@@ -66,7 +69,7 @@ public class UserAgentHelper {
         final WebAppInterface webInterface = new WebAppInterface(context);
         browser.addJavascriptInterface(webInterface, "android");
         //settings.getUserAgentString();
-        /*
+
         browser.setWebViewClient(new WebViewClient() {
             boolean loadingFinished = true;
             boolean redirect = false;
@@ -86,11 +89,6 @@ public class UserAgentHelper {
                     loadingFinished = true;
                     String userAgent = webInterface.getUserAgent();
                     rootElement.removeViewAt(nbSubViews);
-                    t = new Future<String>() {
-                        @Override
-                        protected String call() {
-                            return userAgent;
-                        }
                 }
 
                 if(loadingFinished && !redirect){
@@ -101,10 +99,9 @@ public class UserAgentHelper {
 
             }
         });
-        */
         browser.loadDataWithBaseURL(null, html, mime, encoding, null);
         browser.addView(browser, nbSubViews);
-        return
+            return webInterface.getUserAgent();
+        });
     }
-}
 }

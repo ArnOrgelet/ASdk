@@ -118,10 +118,10 @@ public class GsonConverter<T> extends HttpHelperAsync implements DataMapper<T>/*
         }
         return result;
     }
-    */
+    *//*
     @Override
     public HttpResponseHandler call() throws Exception {
         HttpResponseHandler resp = super.call();
         return resp;
-    }
+    }*/
 }

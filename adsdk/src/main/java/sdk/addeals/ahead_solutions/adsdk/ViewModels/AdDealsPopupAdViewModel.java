@@ -3,7 +3,12 @@ package sdk.addeals.ahead_solutions.adsdk.ViewModels;
 import android.opengl.Visibility;
 import android.view.View;
 
+import com.google.android.gms.games.internal.constants.TimeSpan;
+
+import org.joda.time.DateTime;
+
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.concurrent.Future;
 
 import sdk.addeals.ahead_solutions.adsdk.AdManager;
@@ -51,24 +56,21 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
     /// <returns>Current delay between interstitial displays</returns>
     internal int SetMinDelayBetweenDisplays(int delay)
     {
-        if (delay < DEFAULT_DELAY) this.Delay = DEFAULT_DELAY;
-        else this.Delay = delay;
+        if (delay < DEFAULT_DELAY) this._delay = DEFAULT_DELAY;
+        else this._delay = delay;
 
-        return this.Delay;
+        return this._delay;
     }
 
     private int _delay = DEFAULT_DELAY;
-    public int Delay
+    public int getDelay()
     {
-        get
-        {
-            return this._delay;
-        }
+        return this._delay;
+    }
 
-        private set
-        {
-            this._delay = value;
-        }
+    private void setDelay(int value)
+    {
+        this._delay = value;
     }
 
     /// <summary>
@@ -79,7 +81,7 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
     internal boolean IsDelayPassed()
     {
         if (this._isPrefetched || lastInterstitialLaunchDate == null ||
-                TimeHelper.getUTCNow() > lastInterstitialLaunchDate.Add(new TimeSpan(0, 0, this.Delay)))
+                TimeHelper.getUTCNow() > lastInterstitialLaunchDate.Add(new TimeSpan(0, 0, this._delay)))
         {
             return true;
         }
@@ -161,14 +163,14 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
         switch (position)
         {
             case AdDealsUniversalSDKW81.AdManager.CloseButtonPosition.ONAD: {
-                this._closeButtonInsideVisibility = Visibility.Visible;
-                this._closeButtonOutsideVisibility = Visibility.Collapsed;
+                this._closeButtonInsideVisibility = View.VISIBLE;
+                this._closeButtonOutsideVisibility = View.INVISIBLE;
                 break;
             }
 
             case AdDealsUniversalSDKW81.AdManager.CloseButtonPosition.TOPRIGHT: {
-                this._closeButtonInsideVisibility = Visibility.Collapsed;
-                this._closeButtonOutsideVisibility = Visibility.Visible;
+                this._closeButtonInsideVisibility = View.INVISIBLE;
+                this._closeButtonOutsideVisibility = View.VISIBLE;
                 break;
             }
         }
@@ -239,7 +241,7 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
                     else
                     {
                         this._frameFullScreenWidth = this._fullScreenWidth;
-                        this._frameFullScreenHeight = (int)(((decimal)this._frameFullScreenWidth / (decimal)tmpWidth) * (decimal)tmpHeight);
+                        this._frameFullScreenHeight = (int)(((double)this._frameFullScreenWidth / (double)tmpWidth) * (double)tmpHeight);
                         if (this._frameFullScreenHeight < this._fullScreenHeight)
                         {
                             this._fullScreenHeight = this._frameFullScreenHeight;
@@ -297,17 +299,17 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
             //ApplicationView.GetForCurrentView().SetDesiredBoundsMode(ApplicationViewBoundsMode.UseVisible);
 
             //var scaleFactor = DisplayInformation.GetForCurrentView().RawDpiX;
-            this._appHeight = (int)(ResolutionHelper.);
-            this._appWidth = (int)(Window.Current.Bounds.Width);
-            this._fullScreenHeight = (int)(this._appHeight);
-            this._fullScreenWidth = (int)(this._appWidth);
+            this.setAppHeight((int)(ResolutionHelper.));
+            this.setAppWidth((int)(Window.Current.Bounds.Width));
+            this.setFullScreenHeight((int)(this._appHeight));
+            this.setFullScreenWidth((int)(this._appWidth));
             int CLOSE_BUTTON_HEIGHT = 35; // Square close button in Pixel.
 
-            this._imgFullScreenHeight = this._fullScreenHeight;
-            this._imgFullScreenWidth = this._fullScreenWidth;
-            this._frameFullScreenWidth = 0;
-            this._frameFullScreenHeight = 0;
-            this._imgFullScreenMargin = "0,0,0,0";
+            this.setImgFullScreenHeight(this._fullScreenHeight);
+            this.setImgFullScreenWidth(this._fullScreenWidth);
+            this.setFrameFullScreenWidth(0);
+            this.setFrameFullScreenHeight(0);
+            this.setImgFullScreenMargin("0,0,0,0");
             int tmpMarginWidth = (int)(_appWidth - CLOSE_BUTTON_HEIGHT - 30);
             this._closeButtonMargin = tmpMarginWidth + ",25,10,10";
 
@@ -319,8 +321,8 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
     private void InitializeDataView()
     {
         // Initialize all panels:
-        this._borderVisibility = Visibility.Collapsed;
-        this._displayFullScreenInterstitial = Visibility.Collapsed;
+        this._borderVisibility = View.INVISIBLE;
+        this._displayFullScreenInterstitial = View.INVISIBLE;
         this._tmpWebSrcBeforeDisplay = StringHelper.Empty;
         this._tmpImpressionPixelSrc = StringHelper.Empty;
         if (!DEFAULT_CLOSE_BUTTON_URI.equals(StringHelper.Empty)) this._closingButton = DEFAULT_CLOSE_BUTTON_URI;
@@ -384,8 +386,8 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
 
             if (myCampaign.OpenBrowserOnClick == 1) this.ClickOpensBrowser = true; else this.ClickOpensBrowser = false;
             if (myCampaign.IsAPIClickURL == 1) this.IsAPIClickURL = true; else this.IsAPIClickURL = false;
-            this._campaignLinkURL = myCampaign.AdClickLink;
-            this._HTMLFBTag = myCampaign.HTMLFBTag.trim();
+            this.setCampaignLinkURL(myCampaign.AdClickLink);
+            this.setHTMLFBTag(myCampaign.HTMLFBTag.trim());
 
             bool displayAd = false;
                 #region old
@@ -414,25 +416,27 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
 
                     if (myCampaign.CanBePreloaded == 1)
                     {
-                        // CACHING CAN BE ACTIVATED (all ads except some CPM based ads!)
-                        this._webViewAdSrc = new URI(this.BuildAdWebURL(myCampaign.AdWebURL, 0, 0));
+                        try {
+                            // CACHING CAN BE ACTIVATED (all ads except some CPM based ads!)
+                            this.setWebViewAdSrc(new URI(this.BuildAdWebURL(myCampaign.AdWebURL, 0, 0)));
+                        }catch(URISyntaxException ex){}
                     }
                     else
                     {
-                        this._tmpWebSrcBeforeDisplay = this.BuildAdWebURL(myCampaign.AdWebURL, 0, 0);
+                        this.setTmpWebSrcBeforeDisplay(this.BuildAdWebURL(myCampaign.AdWebURL, 0, 0));
                     }
 
-                    this._borderVisibility = Visibility.Visible;
-                    this._webViewVisibility = Visibility.Visible; // DO NOT REMOVE! (used to update displays!)
+                    this.setBorderVisibility(View.VISIBLE);
+                    this.setWebViewVisibility(View.VISIBLE); // DO NOT REMOVE! (used to update displays!)
                     displayAd = true;
                     break;
                 }
 
                 case AD_TYPE_VIDEO_HTML:
                 {
-                    this._displayFullScreenInterstitial = Visibility.Visible;
-                    this._nativeImageVisibility = Visibility.Collapsed;
-                    this._frameFullScreenVisibility = Visibility.Collapsed;
+                    this.setDisplayFullScreenInterstitial(View.VISIBLE);
+                    this.setNativeImageVisibility(View.INVISIBLE);
+                    this.setFrameFullScreenVisibility(View.INVISIBLE);
 
                     // Display after the frame when there is one.
                     this.LoadFrame(myCampaign);
@@ -440,28 +444,28 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
                     if (myCampaign.CanBePreloaded == 1)
                     {
                         // CACHING CAN BE ACTIVATED (all ads except some CPM based ads!)
-                        this._webViewAdSrc = new URI(this.BuildAdWebURL(myCampaign.AdWebURL, (int)this._appWidth, (int)this._appHeight));
+                        this.setWebViewAdSrc(new URI(this.BuildAdWebURL(myCampaign.AdWebURL, (int)this._appWidth, (int)this._appHeight)));
                     }
                     else
                     {
-                        this._tmpWebSrcBeforeDisplay = this.BuildAdWebURL(myCampaign.AdWebURL, (int)this._appWidth, (int)this._appHeight);
+                        this.setTmpWebSrcBeforeDisplay(this.BuildAdWebURL(myCampaign.AdWebURL, (int)this._appWidth, (int)this._appHeight));
                     }
 
-                    this._borderVisibility = Visibility.Visible;
-                    this._webViewVisibility = Visibility.Visible; // DO NOT REMOVE! (used to update displays!)
+                    this._borderVisibility = View.VISIBLE;
+                    this._webViewVisibility = View.VISIBLE; // DO NOT REMOVE! (used to update displays!)
                     displayAd = true;
                     break;
                 }
 
                 case AD_TYPE_FULL_INTERSTITIAL_NATIVE:
                 {
-                    this._displayFullScreenInterstitial = Visibility.Visible;
-                    this._frameFullScreenVisibility = Visibility.Collapsed;
-                    this._webViewVisibility = Visibility.Collapsed;  // DO NOT REMOVE!!! (used to update displays!)
-                    this._fullScreenAdImg = myCampaign.AdImageURL;
+                    this._displayFullScreenInterstitial = View.VISIBLE;
+                    this._frameFullScreenVisibility = View.INVISIBLE;
+                    this._webViewVisibility = View.INVISIBLE;  // DO NOT REMOVE!!! (used to update displays!)
+                    this.setFullScreenAdImg(myCampaign.AdImageURL);
                     this.LoadFrame(myCampaign);
-                    this._borderVisibility = Visibility.Visible;
-                    this._nativeImageVisibility = Visibility.Visible;
+                    this._borderVisibility = View.VISIBLE;
+                    this._nativeImageVisibility = View.VISIBLE;
                     displayAd = true;
 
                     break;
@@ -485,11 +489,11 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
 
 
     public void UpdateImpressionInfo(Campaign myCampaign) {
-        //this.WebViewPixelVisibility = Visibility.Collapsed;                                         // Will always be collapsed!
+        //this.WebViewPixelVisibility = View.Collapsed;                                         // Will always be collapsed!
         this._tmpImpressionPixelSrc = this.BuildAdDisplayPixelURL(myCampaign.ImpressionPixelURL, 0, 0);      // Call up to 2 impression pixels on one single web page when there are some!
         if (myCampaign.ImpressionPixelURL.trim() != StringHelper.Empty)
         {
-            this._webViewPixelVisibility = Visibility.Visible;
+            this._webViewPixelVisibility = View.VISIBLE;
         }
     }
 
@@ -571,13 +575,13 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
         }
     }
 
-    private Visibility _borderVisibility;
-    public Visibility getBorderVisibility()
+    private /*Visibility*/ int _borderVisibility;
+    public /*Visibility*/ int getBorderVisibility()
     {
         return this._borderVisibility;
     }
 
-    public void setBorderVisibility(Visibility value)
+    public void setBorderVisibility(/*Visibility*/ int value)
     {
         if (this._borderVisibility != value)
         {
@@ -586,13 +590,13 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
         }
     }
 
-    private Visibility _nativeImageVisibility;
-    public Visibility getNativeImageVisibility()
+    private /*Visibility*/ int _nativeImageVisibility;
+    public/*Visibility*/ int getNativeImageVisibility()
     {
         return this._nativeImageVisibility;
     }
 
-    public void getNativeImageVisibility(Visibility value)
+    public void getNativeImageVisibility(/*Visibility*/ int value)
         {
             if (this._nativeImageVisibility != value)
             {
@@ -602,13 +606,13 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
         }
     }
 
-    private Visibility _closeButtonOutsideVisibility = Visibility.Collapsed;
-    public Visibility getCloseButtonOutsideVisibility()
+    private /*Visibility*/ int _closeButtonOutsideVisibility = View.INVISIBLE;
+    public /*Visibility*/ int getCloseButtonOutsideVisibility()
     {
         return this._closeButtonOutsideVisibility;
     }
 
-    public void setCloseButtonOutsideVisibility(Visibility value)
+    public void setCloseButtonOutsideVisibility(/*Visibility*/ int  value)
     {
         if (this._closeButtonOutsideVisibility != value)
         {
@@ -617,13 +621,13 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
         }
     }
 
-    private Visibility _closeButtonInsideVisibility = View.INVISIBLE;
-    public Visibility getCloseButtonInsideVisibility()
+    private /*Visibility*/ int _closeButtonInsideVisibility = View.INVISIBLE;
+    public /*Visibility*/ int  getCloseButtonInsideVisibility()
     {
         return this._closeButtonInsideVisibility;
     }
 
-    public void getCloseButtonInsideVisibility(Visibility value)
+    public void getCloseButtonInsideVisibility(/*Visibility*/ int  value)
     {
         if (this._closeButtonInsideVisibility != value)
         {
@@ -632,13 +636,13 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
         }
     }
 
-    private Visibility _frameFullScreenVisibility;
-    public Visibility getFrameFullScreenVisibility()
+    private /*Visibility*/ int  _frameFullScreenVisibility;
+    public /*Visibility*/ int  getFrameFullScreenVisibility()
     {
         return this._frameFullScreenVisibility;
     }
 
-    public void getFrameFullScreenVisibility(Visibility value)
+    public void getFrameFullScreenVisibility(/*Visibility*/ int  value)
     {
         if (this._frameFullScreenVisibility != value)
         {
@@ -647,14 +651,14 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
         }
     }
 
-    private Visibility _displayFullScreenInterstitial;
-    public Visibility getDisplayFullScreenInterstitial()
+    private /*Visibility*/ int _displayFullScreenInterstitial;
+    public /*Visibility*/ int getDisplayFullScreenInterstitial()
     {
         return this._displayFullScreenInterstitial;
     }
 
 
-    public void setDisplayFullScreenInterstitial(Visibility value)
+    public void setDisplayFullScreenInterstitial(/*Visibility*/ int value)
     {
         if (this._displayFullScreenInterstitial != value)
         {
@@ -681,13 +685,13 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
             }
         }*/
 
-    private Visibility _webViewPixelVisibility;
-    public Visibility getWebViewPixelVisibility()
+    private /*Visibility*/ int  _webViewPixelVisibility;
+    public /*Visibility*/ int  getWebViewPixelVisibility()
     {
         return this._webViewPixelVisibility;
     }
 
-    public Visibility setWebViewPixelVisibility(Visibility value)
+    public void setWebViewPixelVisibility(/*Visibility*/ int  value)
     {
         if (this._webViewPixelVisibility != value)
         {
@@ -738,7 +742,7 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
         return this._closeButtonMargin;
     }
 
-    public String setCloseButtonMargin(String value)
+    public void setCloseButtonMargin(String value)
     {
         if (this._closeButtonMargin != value)
         {
@@ -768,7 +772,7 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
         return this._fullScreenWidth;
     }
 
-    public int setFullScreenWidth(int value)
+    public void setFullScreenWidth(int value)
     {
         if(this._fullScreenWidth!=value)
         {
@@ -783,7 +787,7 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
         return this._fullScreenHeight;
     }
 
-    public int setFullScreenHeight(int value)
+    public void setFullScreenHeight(int value)
     {
         if (this._fullScreenHeight != value)
         {

@@ -1,14 +1,18 @@
 package sdk.addeals.ahead_solutions.adsdk;
 
-import sdk.addeals.ahead_solutions.adsdk.AdManager;
+import sdk.addeals.ahead_solutions.adsdk.EventModels.EventListener;
+import sdk.addeals.ahead_solutions.adsdk.EventModels.Observable;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.StringHelper;
 
 /**
  * Created by ArnOr on 02/05/2017.
  */
 
-public abstract class AbstractAdManager {
+public abstract class AbstractAdManager extends Observable<EventListener> {
 
+    protected AbstractAdManager(){
+        super();
+    }
     /**/ protected static int DEFAULT_CAMPAIGN_ID = 2;
 
     /**/ protected static String VIDEO_COMPLETED_HTML_TAG = "videocompleted.addealsnetwork.com";
@@ -58,7 +62,7 @@ public abstract class AbstractAdManager {
     /**/ protected final int CAMPAIGN_TYPE_VIDEO_REWARDED = 12;
 
     // Interstitial finalants
-    /**/ protected final int HTTP_QUERY_TIMEOUT = 10;
+    /**/ protected static final int HTTP_QUERY_TIMEOUT = 10;
 
         /* protected final int AD_ACTION_NOT_INTERESTED = 3;
          protected final int AD_ACTION_MORE_OFFERS = 4;
@@ -89,8 +93,8 @@ public abstract class AbstractAdManager {
     /**/ protected static final int AD_TYPE_FULL_SQUARE_PICTURE_HTML = 14;
 
     // Session Types
-    /**/ protected final int FIRST_APP_LAUNCH = 1;
-    /**/ protected final int OTHER_APP_LAUNCH = 0;
+    /**/ protected static final int FIRST_APP_LAUNCH = 1;
+    /**/ protected static final int OTHER_APP_LAUNCH = 0;
 
     // Ad Kind
     ///**/ protected final int AD_KIND_DEFAULT = 1;

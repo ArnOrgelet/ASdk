@@ -16,5 +16,5 @@ public class AppInstall {
     @SerializedName("clkid")
     public long ClickID;
     @SerializedName("usrid")
-    public long userID;
+    public long UserID;
 }

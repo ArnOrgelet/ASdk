@@ -21,17 +21,22 @@ import java.util.concurrent.Future;
 public class HttpHelperAsync extends HttpHelper implements Callable<HttpResponseHandler> {
     private static ExecutorService _executor;
     private final static int POOL_SIZE = 3;
+    public HttpHelperAsync(int timeout){
+        super(timeout);
+        _executor = Executors.newFixedThreadPool(POOL_SIZE);
+        //_executor.shutdown();
+    }
     public HttpHelperAsync(){
         super();
         _executor = Executors.newFixedThreadPool(POOL_SIZE);
         //_executor.shutdown();
     }
-/*
+
     @Override
     public HttpResponseHandler call() throws Exception {
         return super.sendRequest(_request);
     }
-*/
+
     //@Override
     protected final HttpResponseHandler sendRequest(final HttpRequest request){
         this._request = request;
