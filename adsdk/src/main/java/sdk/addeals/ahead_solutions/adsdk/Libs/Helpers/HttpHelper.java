@@ -24,7 +24,7 @@ import java.util.List;
  * Created by ArnOr on 02/05/2017.
  */
 
-public class HttpHelper<T> {
+public class HttpHelper {
 
     private final String EXCEPTION_NULL_VALUE_MESSAGE = "Return Value is NULL";
     private final String EXCEPTION_NULL_PARAMS_MESSAGE = "WS (GetDataFromJsonWeb) exception";

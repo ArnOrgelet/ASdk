@@ -15,7 +15,7 @@ import static java.security.AccessController.getContext;
 
 public class DeviceInfosHelper {
 
-    public static string GetDeviceID(Context context)
+    public static String getDeviceID(Context context)
     {
         String did =
                 Settings.Secure.getString(context.getContentResolver(),
@@ -56,7 +56,7 @@ public class DeviceInfosHelper {
             w.InvokeScript("execScript", new[] { "window.external.notify(navigator.appVersion); " });
             return t.Task.Result;
         }*/
-
+        /*
         [StructLayout(LayoutKind.Sequential)]
     public struct OsVersionInfoEx
     {
@@ -73,9 +73,8 @@ public class DeviceInfosHelper {
         public byte ProductType;
         public byte Reserved;
     }
-
-
-}
+    }
+    */
 
     /*public class VersionInfo
     {

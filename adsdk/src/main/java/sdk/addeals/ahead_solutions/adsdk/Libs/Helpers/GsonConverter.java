@@ -44,7 +44,7 @@ public class GsonConverter<T> extends HttpHelperAsync implements DataMapper<T>/*
         return (new Gson()).fromJson(formattedDataStr, _typeOfT);
     }
 
-
+    /*
     /// <summary>
     /// GENERIC CALL TO GET JSON OBJECTS FROM WEB SERVICES (GET METHOD)
     /// </summary>
@@ -118,11 +118,10 @@ public class GsonConverter<T> extends HttpHelperAsync implements DataMapper<T>/*
         }
         return result;
     }
-
+    */
     @Override
     public HttpResponseHandler call() throws Exception {
         HttpResponseHandler resp = super.call();
-
         return resp;
     }
 }

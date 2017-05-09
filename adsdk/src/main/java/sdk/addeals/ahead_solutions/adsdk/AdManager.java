@@ -2,12 +2,16 @@ package sdk.addeals.ahead_solutions.adsdk;
 
 import android.content.Context;
 import android.net.NetworkInfo;
+import android.text.Layout;
 import android.util.Base64;
+import android.view.ViewGroup;
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.android.gms.games.internal.constants.TimeSpan;
 
+import org.joda.time.DateTime;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -26,11 +30,15 @@ import java.util.concurrent.Future;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.AbstractSettingsHelperSDK;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.DeviceSettingsHelper;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.HttpHelper;
+import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.SettingsHelperSDK;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.StringHelper;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.TimeHelper;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.UserAgentHelper;
+import sdk.addeals.ahead_solutions.adsdk.ViewModels.AdDealsPopupAdViewModel;
+import sdk.addeals.ahead_solutions.adsdk.ViewModels.AdDealsWallViewModel;
 
 /**
  * Created by ArnOr on 02/05/2017.
@@ -70,7 +78,7 @@ public class AdManager extends AbstractAdManager  {
         /// int > 0
         /// </summary>
         /// <param name="age"></param>
-    public void SetUserAge(int age) {
+    public void setUserAge(int age) {
         userAge = age;
     }
 
@@ -78,7 +86,7 @@ public class AdManager extends AbstractAdManager  {
     /// Set it / user to improve CPMs
     /// </summary>
     /// <param name="sex"></param>
-    public void SetUserSex(Sex sex) {
+    public void setUserSex(Sex sex) {
         userSex = sex;
     }
 
@@ -160,15 +168,15 @@ public class AdManager extends AbstractAdManager  {
     /// </summary>
     /// <param name="appID">Unique Application ID provided by AdDeals</param>
     /// <param name="appKey">Unique Application Key provided by AdDeals</param>
-    public static Future<Boolean> InitSDK(Panel layoutRoot, String appID, String appKey)
+    public static Future<Boolean> initSDK(Context context, ViewGroup layoutRoot, String appID, String appKey)
     {
         try
         {
-            AppID = appID;
-            AppKey = appKey;
-
+            _appID = appID;
+            _appKey = appKey;
+            _appContext = context;
             // MANDATORY VALUE.
-            AdManager.USER_AGENT = await UserAgentHelper.GetUserAgent(layoutRoot);
+            AdManager.USER_AGENT = (new Thread(UserAgentHelper.GetUserAgent(context, layoutRoot))).start();
 
             // Initialize settings
             SettingsHelperSDK settings = new SettingsHelperSDK();
@@ -177,7 +185,7 @@ public class AdManager extends AbstractAdManager  {
 
             // Cannot be initialized more than once / app launch (while it's in memory) or / day (so we try to notify install again and session)
             Date lastLaunch = DateTime.FromFileTimeUtc((long)ApplicationData.Current.LocalSettings.Values[AbstractSettingsHelperSDK.AS20082013DATE_LAST_LAUNCH]);
-            if (!SDKinitialized || (SDKinitialized && lastLaunch.Add(new TimeSpan(0, 12, 0, 0)) < DateTime.UtcNow)
+            if (!SDKinitialized || (SDKinitialized && lastLaunch.Add(new TimeSpan(0, 12, 0, 0)) < TimeHelper.getUTCNow())
                     || !(boolean)ApplicationData.Current.LocalSettings.Values[AbstractSettingsHelperSDK.AS20082013INSTALL_NOTIFIED])
             {
                 ApplicationData.Current.LocalSettings.Values[AbstractSettingsHelperSDK.AS20082013DATE_LAST_LAUNCH] = DateTime.UtcNow.ToFileTimeUtc();
@@ -188,17 +196,17 @@ public class AdManager extends AbstractAdManager  {
                 NotifyNewInstall(); // Notify installs + Sessions.
 
                 SDKinitialized = true;
-                if (InitSDKSuccess != null)
+                if (_initSDKSuccess != null)
                 {
-                    InitSDKSuccess(new object(), new EventArgs());
+                    initSDKSuccess(new object(), new EventArgs());
                 }
             }
         }
         catch (Exception)
         {
-            if (!SDKinitialized && InitSDKFailed != null)
+            if (!SDKinitialized && initSDKFailed != null)
             {
-                InitSDKFailed(new object(), new EventArgs());
+                initSDKFailed(new object(), new EventArgs());
             }
         }
 
@@ -231,12 +239,12 @@ public class AdManager extends AbstractAdManager  {
     /// <summary>
     /// Generated AdDeals Wall Web Link that needs to be called from a non-silverlight app (like XNA only games)
     /// </summary>
-     static String GetWallWebLink()
+    public static String GetWallWebLink()
     {
         // New link: http://web.addealsnetwork.com/wall?a=1932&k=LIE2H2N2CQSB&advuid=[ADVERTISERID]
         String link = ADDEALS_WEB_LINK_GENERIC;
 
-        if (AdManager.DeviceKind.Equals(AdManager.DeviceType.PHONE))
+        if (AdManager.getDeviceKind().equals(AdManager.DeviceType.PHONE))
         {
             link = ADDEALS_WEB_LINK;
             String strToEncode = ADDEALS_WEB_LINK_STR_PARAMS.replace("[APP_ID]", AppID);
@@ -301,11 +309,11 @@ public class AdManager extends AbstractAdManager  {
         }
 
         // Only open a new AdDealsSquare if the popup is closed.
-        if (GetAdDealsSquare(adKindSupported) == null)
+        if (getAdDealsSquare(adKindSupported) == null)
         {
             switch (adKindSupported)
             {
-                case AdKind.REWARDEDVIDEOAD:
+                case REWARDEDVIDEOAD:
                 {
                     adDealsSquareRewardedVideos = new AdDealsPopupAd(mainPageLayout, adKindSupported);
                     break;
@@ -320,12 +328,12 @@ public class AdManager extends AbstractAdManager  {
 
         }
 
-        if (GetAdDealsSquare(adKindSupported) != null)
+        if (getAdDealsSquare(adKindSupported) != null)
         {
-            GetAdDealsSquare(adKindSupported).SetAdRequested(adKindSupported);
-            GetAdDealsSquare(adKindSupported).SetLayout(mainPageLayout);
-            GetAdDealsSquare(adKindSupported).SetPercentScreenAd(0.94);
-            GetAdDealsSquare(adKindSupported).SetCloseButtonPosition(CloseButtonPosition.ONAD);
+            getAdDealsSquare(adKindSupported).SetAdRequested(adKindSupported);
+            getAdDealsSquare(adKindSupported).SetLayout(mainPageLayout);
+            getAdDealsSquare(adKindSupported).SetPercentScreenAd(0.94);
+            getAdDealsSquare(adKindSupported).SetCloseButtonPosition(CloseButtonPosition.ONAD);
         }
 
         return GetAdDealsSquare(adKindSupported);
@@ -379,7 +387,7 @@ public class AdManager extends AbstractAdManager  {
     {
         if (adPopup != null)
         {
-            return adPopup.IsOpen;
+            return adPopup.getIsOpen();
         }
         else return false;
     }
@@ -455,7 +463,7 @@ public class AdManager extends AbstractAdManager  {
         {
             MOBILE_OPERATOR = StringHelper.Empty;   // Unable to get with Windows 8.1.
         }
-        catch (Exception) { }
+        catch (Exception ex) { }
 
         try
         {
@@ -475,7 +483,7 @@ public class AdManager extends AbstractAdManager  {
                 e.printStackTrace();
             }
         }
-        catch (Exception) { }
+        catch (Exception ex) { }
 
         try
         {
@@ -512,7 +520,7 @@ public class AdManager extends AbstractAdManager  {
             XElement.Load("WMAppManifest.xml").Descendants("App")
             select manifest).SingleOrDefault().Attribute("ProductID").Value;*/
         }
-        catch (Exception) { }
+        catch (Exception ex) { }
 
         try
         {
@@ -797,13 +805,24 @@ public class AdManager extends AbstractAdManager  {
     {
         return _appID;
     }
-
-
     private void setAppID(String value)
     {
         if (_appID != value)
         {
             _appID = value;
+        }
+    }
+
+    private static Context _appContext;
+    public static Context getAppContext()
+    {
+        return _appContext;
+    }
+    private void setAppContext(Context value)
+    {
+        if (_appContext != value)
+        {
+            _appContext = value;
         }
     }
 

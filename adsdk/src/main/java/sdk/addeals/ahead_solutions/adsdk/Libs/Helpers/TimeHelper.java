@@ -11,8 +11,14 @@ import java.util.TimeZone;
 
 public class TimeHelper {
     static final String DATEFORMAT = "yyyy-MM-dd HH:mm:ss";
-
+/*
     public static Date getUTC()
+    {
+        //note: doesn't check for null
+        return stringToDate(getUTCstring());
+    }
+    */
+    public static Date getUTCNow()
     {
         //note: doesn't check for null
         return stringToDate(getUTCstring());

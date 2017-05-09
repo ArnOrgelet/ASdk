@@ -45,19 +45,19 @@ public class UserAgentHelper {
 
         @JavascriptInterface
         public void retrieveUserAgent(String _userAgent) {
-            userAgent = _userAgent;
+            setUserAgent(_userAgent);
         }
-
+        private void setUserAgent(String value) { userAgent = value; }
         public String getUserAgent() {
             return userAgent;
         }
     }
 
-    public static Task<String> GetUserAgent(Context context, final ViewGroup rootElement)
+    public static Future<String> GetUserAgent(Context context, final ViewGroup rootElement)
     {
         final WebView browser = new WebView(context);
-        CompletableFuture<String> cf = new CompletableFuture<>();
-        Task<String> t = null;
+        //CompletableFuture<String> cf = new CompletableFuture<>();
+        Future<String> t = null;
         //browser.All = true;
         final int nbSubViews = rootElement.getChildCount();
         browser.setVisibility(WebView.INVISIBLE);
@@ -66,7 +66,7 @@ public class UserAgentHelper {
         final WebAppInterface webInterface = new WebAppInterface(context);
         browser.addJavascriptInterface(webInterface, "android");
         //settings.getUserAgentString();
-
+        /*
         browser.setWebViewClient(new WebViewClient() {
             boolean loadingFinished = true;
             boolean redirect = false;
@@ -86,7 +86,7 @@ public class UserAgentHelper {
                     loadingFinished = true;
                     String userAgent = webInterface.getUserAgent();
                     rootElement.removeViewAt(nbSubViews);
-                    t = new Task<String>() {
+                    t = new Future<String>() {
                         @Override
                         protected String call() {
                             return userAgent;
@@ -101,6 +101,7 @@ public class UserAgentHelper {
 
             }
         });
+        */
         browser.loadDataWithBaseURL(null, html, mime, encoding, null);
         browser.addView(browser, nbSubViews);
         return

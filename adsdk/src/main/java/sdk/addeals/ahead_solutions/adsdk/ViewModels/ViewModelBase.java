@@ -8,11 +8,13 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.Future;
 
 import sdk.addeals.ahead_solutions.adsdk.AbstractAdManager;
 import sdk.addeals.ahead_solutions.adsdk.AdManager;
+import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.DataMapperFactory;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.HttpHelper;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.HttpHelperAsync;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.StringHelper;
@@ -47,7 +49,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
     public boolean _adWasClicked = false;
     public boolean _adLoaded = false;
 
-    private static String _country = StringHelper.Empty;
+    protected static String _country = StringHelper.Empty;
     public static String getCountry()
     {
         try
@@ -58,7 +60,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
         return _country;
     }
 
-    private static String _language = StringHelper.Empty;
+    protected static String _language = StringHelper.Empty;
     public static String getLanguage()
     {
         try
@@ -69,7 +71,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
         return _language;
     }
 
-    private CampaignsV3 _campaigns;
+    protected CampaignsV3 _campaigns;
     public CampaignsV3 getCampaigns()
     {
         return this._campaigns;
@@ -83,7 +85,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
         }
     }
 
-    private Uri _webViewAdSrc;
+    protected Uri _webViewAdSrc;
     public Uri getWebViewAdSrc()
     {
         return this._webViewAdSrc;
@@ -98,7 +100,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
         }
     }
 
-    private double _appWidth = 480;
+    protected double _appWidth = 480;
     public double getAppWidth()
     {
         return this._appWidth;
@@ -113,7 +115,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
         }
     }
 
-    private double _appHeight = 480;
+    protected double _appHeight = 480;
     public double getAppHeight()
     {
         return this._appHeight;
@@ -128,7 +130,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
         }
     }
 
-    private String _closingButton;
+    protected String _closingButton;
     public String getClosingButton()
     {
         return this._closingButton;
@@ -143,13 +145,13 @@ public abstract class ViewModelBase extends AbstractAdManager{
         }
     }
 
-    private String _progressRingMargin = "0,0,0,0";
+    protected String _progressRingMargin = "0,0,0,0";
     public String getProgressRingMargin()
     {
         return this._progressRingMargin;
     }
 
-    public void setProgressRingMargin(String value)
+    protected void setProgressRingMargin(String value)
     {
         if (this._progressRingMargin != value)
         {
@@ -158,7 +160,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
         }
     }
 
-    private String _campaignLinkURL;
+    protected String _campaignLinkURL;
     public String getCampaignLinkURL()
     {
         return this._campaignLinkURL;
@@ -173,7 +175,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
         }
     }
 
-    private String _htmlFBTag;
+    protected String _htmlFBTag;
     public String getHTMLFBTag()
     {
         return this._htmlFBTag;
@@ -189,7 +191,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
     }
 
 
-    public Future<CampaignsV3> GetCampaignAd(String requestedAdTypes, int reqAdWidth, int reqAdHeight, int campType, boolean strictSize)
+    public /*Future<*/CampaignsV3 GetCampaignAd(String requestedAdTypes, int reqAdWidth, int reqAdHeight, int campType, boolean strictSize)
     {
         HttpHelper httpHelper = new HttpHelper(/*AdManager.*/HTTP_QUERY_TIMEOUT);
         String baseURL = AdManager.AD_NETWORK_URL;
@@ -212,9 +214,9 @@ public abstract class ViewModelBase extends AbstractAdManager{
             }
         }
 
-        String campaignV3URL = AdManager.ADDEALS_CAMPAIGN_URL_v3.replace("[APP_ID]", AdManager.AppID);
+        String campaignV3URL = AdManager.ADDEALS_CAMPAIGN_URL_v3.replace("[APP_ID]", AdManager.getAppID()AppID);
         campaignV3URL = campaignV3URL.replace("[BASE_URL]", baseURL);
-        campaignV3URL = campaignV3URL.replace("[APP_KEY]", AdManager.AppKey);
+        campaignV3URL = campaignV3URL.replace("[APP_KEY]", AdManager.getAppKey());
         campaignV3URL = campaignV3URL.replace("[DEVICE_ID]", AdManager.GetDeviceID());
         try {
             campaignV3URL = campaignV3URL.replace("[DEVICE_MODEL]", URLEncoder.encode(AdManager.DEVICE_MODEL, "UTF-8"));
@@ -262,19 +264,24 @@ public abstract class ViewModelBase extends AbstractAdManager{
         campaignV3URL = campaignV3URL + "&rand=" + TimeHelper.getUTC();//DateTime.UtcNow.ToFileTimeUtc();                         // Reload new deal (caching issue)!
 
         // "http://ads.addealsnetwork.com/addeals/REST/v3/campaigns/?format=json&aid=1932&akey=LIE2H2N2CQSB&lang=fr&country=FR&os=&ctypeid=3&sdkv=3.0&adh=900&adw=1200&duid=4f6238c63a018e0a7101b4665356af37&advuid=538035f6476666d48294808205d3a48c&mop=&conn=ETHERNET&appuid=&adkind=&adtypes=[3][7]&prefetch=1&spid=&rand=130850692134853359&usragent=%20Mozilla/5.0%20(Windows%20NT%2010.0;%20ARM;%20Trident/7.0;%20Touch;%20rv:11.0;%20IEMobile/11.0;%20NOKIA;%20Lumia%20630)%20like%20Gecko"
-        return await new HttpHelperAsync<CampaignsV3>().getDataFromJsonWeb(campaignV3URL);
+        return new HttpHelperAsync()
+            .get(campaignV3URL)
+            .getResponseEntity(DataMapperFactory.create(DataMapperFactory.Format.JSON),CampaignsV3.class);//.getDataFromJsonWeb(campaignV3URL);
     }
 
     // We notify click via API only once.
-    Future NotifyAdClick(int reqAdWidth, int reqAdHeight)
+    /*Future*/ void NotifyAdClick(int reqAdWidth, int reqAdHeight)
     {
         // Notify server via click API if not notified already! Up to 1 / ad!
         if (!this._adWasClicked)
         {
             this._adWasClicked = true;
             HttpHelper httpHelper = new HttpHelper(/*AbstractAdManager.*/HTTP_QUERY_TIMEOUT);
-            String campLink = this.BuildClickURL(this.CampaignLinkURL, reqAdWidth, reqAdHeight);
-            String result = await httpHelper.GetStringFromWeb(campLink + "&rand=" + DateTime.UtcNow.ToFileTimeUtc());
+            String campLink = this.BuildClickURL(this.getCampaignLinkURL(), reqAdWidth, reqAdHeight);
+            //String result = await httpHelper.GetStringFromWeb(campLink + "&rand=" + DateTime.UtcNow.ToFileTimeUtc());
+            new HttpHelperAsync()
+                .get(campLink + "&rand=" + System.currentTimeMillis())//Date..UtcNow.ToFileTimeUtc())
+                .getResponseEntity(DataMapperFactory.create(DataMapperFactory.Format.JSON),CampaignsV3.class);//
         }
     }
 
@@ -448,6 +455,4 @@ public abstract class ViewModelBase extends AbstractAdManager{
     }
 
     public String ImpressionPixelSrcTmp = StringHelper.Empty;
-
-}
 }

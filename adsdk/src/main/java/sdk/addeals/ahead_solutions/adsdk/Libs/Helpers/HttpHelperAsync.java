@@ -18,7 +18,7 @@ import java.util.concurrent.Future;
  * Created by ArnOr on 02/05/2017.
  */
 
-public class HttpHelperAsync<T> extends HttpHelper<T> implements Callable<HttpResponseHandler> {
+public class HttpHelperAsync extends HttpHelper implements Callable<HttpResponseHandler> {
     private static ExecutorService _executor;
     private final static int POOL_SIZE = 3;
     public HttpHelperAsync(){
@@ -26,12 +26,12 @@ public class HttpHelperAsync<T> extends HttpHelper<T> implements Callable<HttpRe
         _executor = Executors.newFixedThreadPool(POOL_SIZE);
         //_executor.shutdown();
     }
-
+/*
     @Override
     public HttpResponseHandler call() throws Exception {
         return super.sendRequest(_request);
     }
-
+*/
     //@Override
     protected final HttpResponseHandler sendRequest(final HttpRequest request){
         this._request = request;
@@ -47,16 +47,14 @@ public class HttpHelperAsync<T> extends HttpHelper<T> implements Callable<HttpRe
         return responseHandler;
     }
 
-    public void get(String url){
-        sendRequest(new HttpGet(url));
+    public HttpResponseHandler get(String url){ return sendRequest(new HttpGet(url)); }
+    public HttpResponseHandler post(String url){
+        return sendRequest(new HttpPost(url));
     }
-    public void post(String url){
-        sendRequest(new HttpPost(url));
+    public HttpResponseHandler put(String url){
+        return sendRequest(new HttpPut(url));
     }
-    public void put(String url){
-        sendRequest(new HttpPut(url));
-    }
-    public void delete(String url){
-        sendRequest(new HttpDelete(url));
+    public HttpResponseHandler delete(String url){
+        return sendRequest(new HttpDelete(url));
     }
 }
