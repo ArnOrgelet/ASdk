@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+    <data>
+        <import type="sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.StringHelper"/>
+        <variable name="popupAd" type="sdk.addeals.ahead_solutions.adsdk.ViewModels.AdDealsPopupAdViewModel"/>
+    </data>
+    <LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:custom="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/popupAd"
+    android:orientation="vertical"
+    android:layout_height="480dp"
+    android:layout_width="800dp">
+    <ImageButton android:id="@+id/backCross"
+        android:name="DefaultCloseButton"
+        android:layout_height="38dp"
+        android:layout_width="38dp"
+        android:layout_margin="10dp"
+        android:visibility="@{popupAd.closeButtonOutsideVisibility}"
+        android:horizontalAlignment="Right"
+        android:verticalAlignment="Top"
+        android:src="@{popupAd.closingButton}"//"@drawable/ClosingCross"
+        android:clickable="true"
+        android:onClick="CloseAd_Tap" />
+        <!-- the latter is set, the more on top -->
+    <ImageButton android:id="@+id/frontCross"
+        android:layout_height="38dp"
+        android:layout_width="38dp"
+        android:layout_margin="10dp"
+        android:visibility="{Binding CloseButtonOutsideVisibility}"
+        android:horizontalAlignment="Right"
+        android:verticalAlignment="Top" />
+</LinearLayout>
+</layout>
