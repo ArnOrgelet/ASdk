@@ -1,5 +1,7 @@
 package sdk.addeals.ahead_solutions.adsdk.ViewModels;
 
+import android.databinding.Bindable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.content.*;
 
@@ -8,6 +10,7 @@ import org.joda.time.DateTime;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.util.Date;
 import java.util.Locale;
@@ -15,7 +18,9 @@ import java.util.concurrent.Future;
 
 import sdk.addeals.ahead_solutions.adsdk.AbstractAdManager;
 import sdk.addeals.ahead_solutions.adsdk.AdManager;
+import sdk.addeals.ahead_solutions.adsdk.BR;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.DataMapperFactory;
+import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.DeviceInfosHelper;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.HttpHelper;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.HttpHelperAsync;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.StringHelper;
@@ -29,6 +34,11 @@ import sdk.addeals.ahead_solutions.adsdk.Models.CampaignsV3;
 public abstract class ViewModelBase extends AbstractAdManager{
 
     int lastCampaignIndex = 0;  // ID of the first campaign called.
+    public int getLastCampaignIndex()
+    {
+        return this.lastCampaignIndex;
+    }
+/**
     public PropertyChangeSupport propertyChanged;
 
     protected void OnPropertyChanged(String name)
@@ -45,7 +55,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         this.propertyChanged.removePropertyChangeListener(listener);
     }
-
+**/
     protected final String DEFAULT_CLOSE_BUTTON_URI = "/AdDealsUniversalSDKW81/Content/Images/ClosingCross.png";
     public boolean _adWasClicked = false;
     public boolean _adLoaded = false;
@@ -86,37 +96,42 @@ public abstract class ViewModelBase extends AbstractAdManager{
         }
     }
 
-    protected Uri _webViewAdSrc;
-    public Uri getWebViewAdSrc()
+    protected URI _webViewAdSrc;
+    @Bindable
+    public URI getWebViewAdSrc()
     {
         return this._webViewAdSrc;
     }
 
-    public void getWebViewAdSrc(Uri value)
+    public void setWebViewAdSrc(URI value)
     {
         if (this._webViewAdSrc != value)
         {
-            this.propertyChanged.firePropertyChange("WebViewAdSrc", this._webViewAdSrc, value);
+            ///this.propertyChanged.firePropertyChange("WebViewAdSrc", this._webViewAdSrc, value);
             this._webViewAdSrc = value;
+            notifyPropertyChanged(BR.webViewAdSrc);
         }
     }
 
     protected double _appWidth = 480;
+    @Bindable
     public double getAppWidth()
     {
         return this._appWidth;
     }
 
-    public void getAppWidth(double value)
+    public void setAppWidth(double value)
     {
         if (this._appWidth != value)
         {
-            this.propertyChanged.firePropertyChange("AppWidth", this._appWidth, value);
+            ///this.propertyChanged.firePropertyChange("AppWidth", this._appWidth, value);
             this._appWidth = value;
+            notifyPropertyChanged(BR.appWidth);
         }
     }
 
     protected double _appHeight = 480;
+    @Bindable
     public double getAppHeight()
     {
         return this._appHeight;
@@ -126,27 +141,31 @@ public abstract class ViewModelBase extends AbstractAdManager{
     {
         if (this._appHeight != value)
         {
-            this.propertyChanged.firePropertyChange("AppHeight", this._appHeight, value);
+            ///this.propertyChanged.firePropertyChange("AppHeight", this._appHeight, value);
             this._appHeight = value;
+            notifyPropertyChanged(BR.appHeight);
         }
     }
 
-    protected String _closingButton;
+    protected /*Drawable*/ String _closingButton;
+    @Bindable
     public String getClosingButton()
     {
         return this._closingButton;
     }
 
-    public void getClosingButton(String value)
+    public void setClosingButton(String value)
     {
         if (this._closingButton != value)
         {
-            this.propertyChanged.firePropertyChange("ClosingButton", this._closingButton, value);
+            ///this.propertyChanged.firePropertyChange("ClosingButton", this._closingButton, value);
             this._closingButton = value;
+            notifyPropertyChanged(BR.closingButton);
         }
     }
 
     protected String _progressRingMargin = "0,0,0,0";
+    @Bindable
     public String getProgressRingMargin()
     {
         return this._progressRingMargin;
@@ -156,12 +175,14 @@ public abstract class ViewModelBase extends AbstractAdManager{
     {
         if (this._progressRingMargin != value)
         {
-            this.propertyChanged.firePropertyChange("ProgressRingMargin", this._progressRingMargin, value);
+            ///this.propertyChanged.firePropertyChange("ProgressRingMargin", this._progressRingMargin, value);
             this._progressRingMargin = value;
+            notifyPropertyChanged(BR.progressRingMargin);
         }
     }
 
     protected String _campaignLinkURL;
+    @Bindable
     public String getCampaignLinkURL()
     {
         return this._campaignLinkURL;
@@ -171,28 +192,31 @@ public abstract class ViewModelBase extends AbstractAdManager{
     {
         if (this._campaignLinkURL != value)
         {
-            this.propertyChanged.firePropertyChange("CampaignLinkURL", this._campaignLinkURL, value);
+            ///this.propertyChanged.firePropertyChange("CampaignLinkURL", this._campaignLinkURL, value);
             this._campaignLinkURL = value;
+            notifyPropertyChanged(BR.campaignLinkURL);
         }
     }
 
     protected String _htmlFBTag;
+    @Bindable
     public String getHTMLFBTag()
     {
         return this._htmlFBTag;
     }
 
-    public void getHTMLFBTag(String value)
+    public void setHTMLFBTag(String value)
     {
         if (this._htmlFBTag != value)
         {
-            this.propertyChanged.firePropertyChange("HTMLFBTag", this._htmlFBTag, value);
+            ///this.propertyChanged.firePropertyChange("HTMLFBTag", this._htmlFBTag, value);
             this._htmlFBTag = value;
+            notifyPropertyChanged(BR.hTMLFBTag);
         }
     }
 
 
-    public /*Future<*/CampaignsV3 GetCampaignAd(String requestedAdTypes, int reqAdWidth, int reqAdHeight, int campType, boolean strictSize)
+    public /*Future<*/CampaignsV3 getCampaignAd(String requestedAdTypes, int reqAdWidth, int reqAdHeight, int campType, boolean strictSize)
     {
         HttpHelper httpHelper = new HttpHelper(/*AdManager.*/HTTP_QUERY_TIMEOUT);
         String baseURL = AdManager.AD_NETWORK_URL;
@@ -218,7 +242,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
         String campaignV3URL = AdManager.ADDEALS_CAMPAIGN_URL_v3.replace("[APP_ID]", AdManager.getAppID());
         campaignV3URL = campaignV3URL.replace("[BASE_URL]", baseURL);
         campaignV3URL = campaignV3URL.replace("[APP_KEY]", AdManager.getAppKey());
-        campaignV3URL = campaignV3URL.replace("[DEVICE_ID]", AdManager.getDeviceID());
+        campaignV3URL = campaignV3URL.replace("[DEVICE_ID]", DeviceInfosHelper.getDeviceID());
         try {
             campaignV3URL = campaignV3URL.replace("[DEVICE_MODEL]", URLEncoder.encode(AdManager.DEVICE_MODEL, "UTF-8"));
         }
@@ -271,14 +295,14 @@ public abstract class ViewModelBase extends AbstractAdManager{
     }
 
     // We notify click via API only once.
-    /*Future*/ void NotifyAdClick(int reqAdWidth, int reqAdHeight)
+    /*Future*/ void notifyAdClick(int reqAdWidth, int reqAdHeight)
     {
         // Notify server via click API if not notified already! Up to 1 / ad!
         if (!this._adWasClicked)
         {
             this._adWasClicked = true;
             HttpHelper httpHelper = new HttpHelper(/*AbstractAdManager.*/HTTP_QUERY_TIMEOUT);
-            String campLink = this.BuildClickURL(this.getCampaignLinkURL(), reqAdWidth, reqAdHeight);
+            String campLink = this.buildClickURL(this.getCampaignLinkURL(), reqAdWidth, reqAdHeight);
             //String result = await httpHelper.GetStringFromWeb(campLink + "&rand=" + DateTime.UtcNow.ToFileTimeUtc());
             new HttpHelperAsync()
                 .get(campLink + "&rand=" + System.currentTimeMillis())//Date..UtcNow.ToFileTimeUtc())
@@ -286,9 +310,9 @@ public abstract class ViewModelBase extends AbstractAdManager{
         }
     }
 
-     String BuildClickURL(String clickURL, int reqAdWidth, int reqAdHeight)
+    public String buildClickURL(String clickURL, int reqAdWidth, int reqAdHeight)
     {
-        clickURL = clickURL.replace("%deviceID%", AdManager.getDeviceID());
+        clickURL = clickURL.replace("%deviceID%", DeviceInfosHelper.getDeviceID());
         clickURL = clickURL.replace("%advertiserUID%", ADVERTISER_UID);
         clickURL = clickURL.replace("%OS%", AdManager.OS_VERSION);
         try {
@@ -327,7 +351,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
         return clickURL;
     }
 
-    String BuildAdWebURL(String webURL, int reqAdWidth, int reqAdHeight)
+    public String buildAdWebURL(String webURL, int reqAdWidth, int reqAdHeight)
     {
         webURL = webURL.replace("%OS%", AdManager.OS_VERSION);
         webURL = webURL.replace("%lang%", AdManager.APP_LANGUAGE);
@@ -345,7 +369,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
         catch(UnsupportedEncodingException ex) {}
         webURL = webURL.replace("%appuid%", APP_UID);
         webURL = webURL.replace("%fingerprint%", StringHelper.Empty);
-        webURL = webURL.replace("%deviceID%", AdManager.getDeviceID());
+        webURL = webURL.replace("%deviceID%", DeviceInfosHelper.getDeviceID());
         try {
             webURL = webURL.replace("%mop%", URLEncoder.encode(MOBILE_OPERATOR, "UTF-8"));
         }
@@ -381,7 +405,7 @@ public abstract class ViewModelBase extends AbstractAdManager{
         return webURL;
     }
 
-     String BuildAdDisplayPixelURL(String displayURL, int reqAdWidth, int reqAdHeight)
+    String buildAdDisplayPixelURL(String displayURL, int reqAdWidth, int reqAdHeight)
     {
         displayURL = displayURL.replace("%OS%", AdManager.OS_VERSION);
         displayURL = displayURL.replace("%lang%", AdManager.APP_LANGUAGE);
@@ -421,37 +445,67 @@ public abstract class ViewModelBase extends AbstractAdManager{
     }
 
     //region  process clicks
-    boolean IsAPIClickURL;
-    boolean ClickOpensBrowser;
+    boolean _isAPIClickURL;
+    public boolean isAPIClickURL()
+    {
+        return this._isAPIClickURL;
+    }
+    public void setIsAPIClickURL(boolean value)
+    {
+        if (this._isAPIClickURL != value)
+        {
+            //this.propertyChanged.firePropertyChange("ImpressionPixelSrc", this._impressionPixelSrc, value);
+            this._isAPIClickURL = value;
+        }
+    }
+
+    boolean _clickOpensBrowser;
+    public boolean isClickOpensBrowser()
+    {
+        return this._clickOpensBrowser;
+    }
+    public void setClickOpensBrowser(boolean value)
+    {
+        if (this._clickOpensBrowser != value)
+        {
+            //this.propertyChanged.firePropertyChange("ImpressionPixelSrc", this._impressionPixelSrc, value);
+            this._clickOpensBrowser= value;
+        }
+    }
+
     //endregion
 
-    private Uri _impressionPixelSrc;
-    public Uri getImpressionPixelSrc()
+    protected URI _impressionPixelSrc;
+    @Bindable
+    public URI getImpressionPixelSrc()
     {
         return this._impressionPixelSrc;
     }
 
-    public void getImpressionPixelSrc(Uri value)
+    public void setImpressionPixelSrc(URI value)
     {
         if (this._impressionPixelSrc != value)
         {
-            this.propertyChanged.firePropertyChange("ImpressionPixelSrc", this._impressionPixelSrc, value);
+            //this.propertyChanged.firePropertyChange("ImpressionPixelSrc", this._impressionPixelSrc, value);
             this._impressionPixelSrc = value;
+            notifyPropertyChanged(BR.impressionPixelURL);
         }
     }
 
-    private /*Visibility*/ int _webViewVisibility;
+    protected /*Visibility*/ int _webViewVisibility;
+    @Bindable
     public /*Visibility*/ int getWebViewVisibility()
     {
         return this._webViewVisibility;
     }
 
-    public void getWebViewVisibility(/*Visibility*/ int value)
+    public void setWebViewVisibility(/*Visibility*/ int value)
     {
         if (this._webViewVisibility != value)
         {
-            this.propertyChanged.firePropertyChange("WebView/*Visibility*/ int", this._webViewVisibility, value);
+            //this.propertyChanged.firePropertyChange("WebViewVisibility", this._webViewVisibility, value);
             this._webViewVisibility = value;
+            notifyPropertyChanged(BR.webViewVisibility);
         }
     }
 

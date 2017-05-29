@@ -6,9 +6,9 @@ import android.databinding.BaseObservable;
  * Created by ArnOr on 13/05/2017.
  */
 
-public class Presenter implements MainActivityContract.Presenter {
+public class MainActivityPresenter implements MainActivityContract.Presenter {
     private MainActivityContract.BindingView bindingView;
-    public Presenter(MainActivityContract.BindingView view) {
+    public MainActivityPresenter(MainActivityContract.BindingView view) {
         this.bindingView = view;
     }
 

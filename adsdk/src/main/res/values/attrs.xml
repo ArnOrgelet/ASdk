@@ -1,2 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources></resources>
+<resources>
+    <declare-styleable name="AdDealsBannerAd">
+        <attr name="AdSpaceWidth" format="integer" />
+        <attr name="AdSpaceHeight" format="integer" />
+        <attr name="showText" format="boolean" />
+        <attr name="panelColor" format="color" />
+        <attr name="labelPosition" format="enum">
+            <enum name="left" value="0"/>
+            <enum name="right" value="1"/>
+        </attr>
+    </declare-styleable>
+    <declare-styleable name="AdDealsPopupAd">
+        <attr name="DefaultCloseButton" format="string" value="/AdDealsUniversalSDKW81/Content/Images/ClosingCross.png"/>
+    </declare-styleable>
+</resources>

@@ -3,36 +3,53 @@ package sdk.addeals.ahead_solutions.adsdk.Libs.Helpers;
 import android.content.Context;
 import android.provider.Settings;
 
+import com.google.android.gms.ads.identifier.AdvertisingIdClient;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
+
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import static java.security.AccessController.getContext;
-
+import org.apache.commons.codec.binary.Hex;
 /**
  * Created by ArnOr on 06/05/2017.
  */
 
 public class DeviceInfosHelper {
 
-    public static String getDeviceID(Context context)
+    public static String getDeviceID(Context appContext)
     {
-        String did =
-                Settings.Secure.getString(context.getContentResolver(),
-                        Settings.Secure.ANDROID_ID);
-        String hashed = StringHelper.Empty;
+        AdvertisingIdClient.Info idInfo = null;
         try {
-            byte[] bytesOfMessage = did.getBytes("UTF-8");
+            idInfo = AdvertisingIdClient.getAdvertisingIdInfo(appContext);
+        } catch (GooglePlayServicesNotAvailableException e) {
+            e.printStackTrace();
+        } catch (GooglePlayServicesRepairableException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        String advertId = null;
+        try{
+            advertId = idInfo.getId();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        /*String did =
+                Settings.Secure.getString(context.getContentResolver(),
+                        Settings.Secure.ANDROID_ID);*/
+        String hashedString = StringHelper.Empty;
+        try {
+            byte[] bytesOfMessage = advertId.getBytes("UTF-8");
             MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] thedigest = md.digest(bytesOfMessage);
-            new String(thedigest);
+            byte[] md5digest = md.digest(bytesOfMessage);
+            new String(md5digest);
+            hashedString = Hex.encodeHexString(md5digest);
         }
         catch (UnsupportedEncodingException ex){}
         catch (NoSuchAlgorithmException ex){}
-
-        String.toHexString();
-
-        String hashedString = CryptographicBuffer.EncodeToHexString(hashed);
         return hashedString;
     }
 

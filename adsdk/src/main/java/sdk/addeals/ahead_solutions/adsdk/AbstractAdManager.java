@@ -3,12 +3,15 @@ package sdk.addeals.ahead_solutions.adsdk;
 import sdk.addeals.ahead_solutions.adsdk.EventModels.EventListener;
 import sdk.addeals.ahead_solutions.adsdk.EventModels.Observable;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.StringHelper;
+import android.databinding.BaseObservable;
+import android.databinding.Bindable;
+
 
 /**
  * Created by ArnOr on 02/05/2017.
  */
 
-public abstract class AbstractAdManager extends Observable<EventListener> {
+public abstract class AbstractAdManager extends BaseObservable/*extends Observable<EventListener>*/ {
 
     protected AbstractAdManager(){
         super();
@@ -69,24 +72,24 @@ public abstract class AbstractAdManager extends Observable<EventListener> {
          protected final int AD_ACTION_REMOVE_ADS = 5;
          protected final int AD_ACTION_CLOSE_ADS = 6;*/
 
-    /**/ protected final int NO_AD_AVAILABLE = -1;       // No Ad received from AdDeals server
-    /**/ protected final int AD_AVAILABLE = 1;           // 1 Square ad received from AdDeals server
-    /**/ protected final int AD_AVAILABILITY_UNKNOWN = 100;
-    /**/ protected final int ERROR_ACCESS_DENIED = 403;
-    /**/ protected final int ERROR_SDK_NOT_INITIALIZED = 1001;
-    /**/ protected final int ERROR_INCOMPATIBLE_AD = 1002;
+    /**/ protected static final int NO_AD_AVAILABLE = -1;       // No Ad received from AdDeals server
+    /**/ protected static final int AD_AVAILABLE = 1;           // 1 Square ad received from AdDeals server
+    /**/ protected static final int AD_AVAILABILITY_UNKNOWN = 100;
+    /**/ protected static final int ERROR_ACCESS_DENIED = 403;
+    /**/ protected static final int ERROR_SDK_NOT_INITIALIZED = 1001;
+    /**/ protected static final int ERROR_INCOMPATIBLE_AD = 1002;
 
     // Campaign targets
-    /**/ protected final int TARGET_APP_DOWNLOAD = 1;
-    /**/ protected final int TARGET_WEB_MOBILE = 2;
-    /**/ protected final int TARGET_CLICK_TO_CALL = 3;
-    /**/ protected final int TARGET_CLICK_TO_VIDEO = 4;
+    /**/ protected static final int TARGET_APP_DOWNLOAD = 1;
+    /**/ protected static final int TARGET_WEB_MOBILE = 2;
+    /**/ protected static final int TARGET_CLICK_TO_CALL = 3;
+    /**/ protected static final int TARGET_CLICK_TO_VIDEO = 4;
 
     // Ad type ID
-    /**/ protected final int AD_TYPE_FULL_INTERSTITIAL_NATIVE = 3;
-    /**/ protected final int AD_TYPE_FULL_INTERSTITIAL_HTML = 7;
-    /**/ protected final int AD_TYPE_VIDEO_HTML = 9;
-    /**/ protected final int AD_TYPE_MEDIUM_SQUARE_PICTURE = 10;
+    /**/ protected static final int AD_TYPE_FULL_INTERSTITIAL_NATIVE = 3;
+    /**/ protected static final int AD_TYPE_FULL_INTERSTITIAL_HTML = 7;
+    /**/ protected static final int AD_TYPE_VIDEO_HTML = 9;
+    /**/ protected static final int AD_TYPE_MEDIUM_SQUARE_PICTURE = 10;
     /**/ protected static final int AD_TYPE_SQUARE_APP_INFO = 11;
     /**/ protected static final int AD_TYPE_MEDIUM_SQUARE_PICTURE_HTML = 12;
     /**/ protected static final int AD_TYPE_FULL_SQUARE_PICTURE_NATIVE = 13;
@@ -111,18 +114,18 @@ public abstract class AbstractAdManager extends Observable<EventListener> {
     ///**/ protected final int ORIENTATION_LANDSCAPE = 2;
 
     // Supported ad formats in this SDK - refer to AdTypes in database for more details.
-    /**/ protected static final String NO_SUPPORTED_ADS = "";                    // Default - none. An ad format must be passed.
-    /**/ protected static final String SQUARE_SUPPORTED_ADS = "[10]";            // [10][11] - square not supported in current SDK version.
-    /**/ protected static final String FULL_SCREEN_SUPPORTED_ADS = "[3][7]";     // [3]: Full screen native ads (portrait & landscape) - pictures only / [7]: Full screen html ads.
-    /**/ protected static final String REWARDED_VIDEO_SUPPORTED_ADS = "[9]";     // [9]: HTML based video ads (portrait & landscape) - pictures only
-    /**/ protected static final String BANNER_SUPPORTED_ADS = "[2][6][9]";       // Videos supported via banners (300x250 in general)
+    /* protected*/ static final String NO_SUPPORTED_ADS = "";                    // Default - none. An ad format must be passed.
+    /* protected*/ static final String SQUARE_SUPPORTED_ADS = "[10]";            // [10][11] - square not supported in current SDK version.
+    /* protected*/ static final String FULL_SCREEN_SUPPORTED_ADS = "[3][7]";     // [3]: Full screen native ads (portrait & landscape) - pictures only / [7]: Full screen html ads.
+    /* protected*/ static final String REWARDED_VIDEO_SUPPORTED_ADS = "[9]";     // [9]: HTML based video ads (portrait & landscape) - pictures only
+    /* protected*/ static final String BANNER_SUPPORTED_ADS = "[2][6][9]";       // Videos supported via banners (300x250 in general)
 
     // Device type finalants
-    /**/ protected static final int DEVICE_WINDOWS_PHONE = 1;
-    /**/ protected static final int DEVICE_WINDOWS_TABLET = 2;
-    /**/ protected static final int DEVICE_NOT_SPECIFIED = -1;
+    /* protected*/ static final int DEVICE_WINDOWS_PHONE = 1;
+    /* protected*/ static final int DEVICE_WINDOWS_TABLET = 2;
+    /* protected*/ static final int DEVICE_NOT_SPECIFIED = -1;
 
     // Refresh rate
-    /**/ protected static final int BANNER_REFRESH_RATE_DEFAULT_AT_LAUNCH = 300;  // Until the SDK is initialized, we check it's initialized every 2 seconds.
-    /**/ protected static final int BANNER_REFRESH_RATE_DEFAULT = 60;           // Once the SDK is initialized, we try to get ads every 60seconds by default, unless it's overriden by server data.
+    /* protected*/ static final long BANNER_REFRESH_RATE_DEFAULT_AT_LAUNCH = 300;  // Until the SDK is initialized, we check it's initialized every 2 seconds.
+    /* protected*/ static final long BANNER_REFRESH_RATE_DEFAULT = 60;           // Once the SDK is initialized, we try to get ads every 60seconds by default, unless it's overriden by server data.
 }

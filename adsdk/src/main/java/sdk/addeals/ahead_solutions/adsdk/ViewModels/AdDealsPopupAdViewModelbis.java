@@ -132,7 +132,7 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
                     Activity activity = ((Activity) adDealsPopupAdView.getContext());/*.getResources().getDisplayMetrics();*/)
                     int boundsHeight = (int)(activity.getWindow().getDecorView().getHeight());
                     int boundsWidth = (int)(activity.getWindow().getDecorView().getWidth());
-                    if ((int)(((Activity)  context).getWindow().getDecorView().Window.Current.Bounds.Width) < boundsHeight)
+                    if (boundsWidth < boundsHeight)
                     {
                         this.setAppHeight(boundsHeight);
                         this.setAppWidth(boundsWidth);
@@ -144,7 +144,7 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
                 }
             }
 
-            CampaignsV3 campaigns = this.GetCampaignAd(requestedAdTypes, (int)this._appWidth, (int)this._appHeight, campaignType, false).get();
+            CampaignsV3 campaigns = this.getCampaignAd(requestedAdTypes, (int)this._appWidth, (int)this._appHeight, campaignType, false).get();
 
             if ((campaigns != null && campaigns.Offers.size() == 0) || campaigns == null)
             {
@@ -460,18 +460,18 @@ public class AdDealsPopupAdViewModel extends ViewModelBase {
                     // Display after the frame when there is one.
                     this.loadFrame(myCampaign);
 
-                    if (myCampaign.CanBePreloaded == 1)
-                    {
-                        try {
+                    try {
+                        if (myCampaign.CanBePreloaded == 1)
+                        {
                             // CACHING CAN BE ACTIVATED (all ads except some CPM based ads!)
-                            this.setWebViewAdSrc(new URI(this.BuildAdWebURL(myCampaign.AdWebURL, (int)this._appWidth, (int)this._appHeight)));
+                            this.setWebViewAdSrc(new URI(this.buildAdWebURL(myCampaign.AdWebURL, (int)this._appWidth, (int)this._appHeight)));
                         }
-                        catch(URISyntaxException ex){}
+                        else
+                        {
+                            this.setTmpWebSrcBeforeDisplay(this.buildAdWebURL(myCampaign.AdWebURL, (int)this._appWidth, (int)this._appHeight));
+                        }
                     }
-                    else
-                    {
-                        this.setTmpWebSrcBeforeDisplay(this.BuildAdWebURL(myCampaign.AdWebURL, (int)this._appWidth, (int)this._appHeight));
-                    }
+                    catch(URISyntaxException ex){}
 
                     this._borderVisibility = View.VISIBLE;
                     this.setWebViewVisibility(View.VISIBLE); // DO NOT REMOVE! (used to update displays!)

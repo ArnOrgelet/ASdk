@@ -4,10 +4,10 @@ package sdk.addeals.ahead_solutions.adsdk.EventModels;
  * Created by ArnOr on 09/05/2017.
  */
 
-public class EventManager {
+public class EventManager<T extends IEventListener> {
     protected Object sender;
-    protected Observable<IEventListener> obs;
-    public EventManager(Observable<IEventListener> _obs/*Object _sender*/){
+    protected Observable<T> obs;
+    public EventManager(Observable<T> _obs/*Object _sender*/){
         /*sender = _sender;*/
         obs = _obs;
     }

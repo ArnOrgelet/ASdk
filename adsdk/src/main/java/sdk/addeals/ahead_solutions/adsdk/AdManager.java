@@ -2,15 +2,24 @@ package sdk.addeals.ahead_solutions.adsdk;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.content.res.Resources;
+import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
+import android.os.Build;
+import android.telephony.TelephonyManager;
 import android.util.Base64;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.android.gms.common.api.Api;
 
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -28,7 +37,11 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -36,11 +49,13 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import sdk.addeals.ahead_solutions.adsdk.EventModels.DefaultSetupListener;
 import sdk.addeals.ahead_solutions.adsdk.EventModels.Event;
+import sdk.addeals.ahead_solutions.adsdk.EventModels.EventListener;
 import sdk.addeals.ahead_solutions.adsdk.EventModels.EventManager;
 import sdk.addeals.ahead_solutions.adsdk.EventModels.IEventListener;
 import sdk.addeals.ahead_solutions.adsdk.EventModels.ISetupListener;
 import sdk.addeals.ahead_solutions.adsdk.EventModels.Observable;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.AbstractSettingsHelperSDK;
+import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.AsyncHelper;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.DeviceInfosHelper;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.DeviceSettingsHelper;
 import sdk.addeals.ahead_solutions.adsdk.Libs.Helpers.GsonConverter;
@@ -54,12 +69,14 @@ import sdk.addeals.ahead_solutions.adsdk.Models.AppInstall;
 import sdk.addeals.ahead_solutions.adsdk.Models.AppSession;
 import sdk.addeals.ahead_solutions.adsdk.ViewModels.AdDealsPopupAdViewModel;
 import sdk.addeals.ahead_solutions.adsdk.ViewModels.AdDealsWallViewModel;
+import sdk.addeals.ahead_solutions.adsdk.Views.AdDealsPopupAd;
+import sdk.addeals.ahead_solutions.adsdk.Views.AdDealsWall;
 
 /**
  * Created by ArnOr on 02/05/2017.
  */
 
-public class AdManager extends AbstractAdManager  {
+public class AdManager extends AbstractAdManager {
         //private static AdDealsBannerViewModel adDealsBannerViewModel = null;
         //private static AdDealsBannerAdViewModel bannerAdViewModel = null;
         private static AdDealsPopupAdViewModel popupAdViewModel = null;
@@ -70,13 +87,16 @@ public class AdManager extends AbstractAdManager  {
         private static AdDealsWall adDealsWall = null;
         static boolean IsPopupOpening = false;
         public static boolean SDKinitialized = false;
-        public static Popup adPopup = null;
+        public static Toast adPopup = null; // adpopup = Toast.makeText(this,"Toasttext",Toast.LENGTH_LONG);
         protected static SettingsHelperSDK settings = null;
-        protected static EventManager eventManager = new EventManager((Observable)this);
+        protected static Observable<EventListener> observable = new Observable<EventListener>();
+        protected static EventManager eventManager = new EventManager(observable);
         // Demographics
         public static Sex userSex = Sex.UNKNOWN;
         public static int userAge = -1;
         public static String location = StringHelper.Empty;
+        private final int NB_THREADS = 3;
+        private static ExecutorService initExecutor = Executors.newFixedThreadPool(10);
 
         public enum BannerAdSizes
         {
@@ -190,57 +210,52 @@ public class AdManager extends AbstractAdManager  {
     /// <param name="appKey">Unique Application Key provided by AdDeals</param>
     public static Future<Boolean> initSDK(Activity mainActivity, ViewGroup layoutRoot, String appID, String appKey)
     {
-        try
-        {
-            _appID = appID;
-            _appKey = appKey;
-            _appMainActivity = mainActivity;
-            _appContext = mainActivity.getApplicationContext();
-            // MANDATORY VALUE.
+        return initExecutor.submit(() -> {
             try {
-                AdManager.USER_AGENT = UserAgentHelper.GetUserAgent(_appContext, layoutRoot).get();
-            }
-            catch (ExecutionException ex){}
-            catch (InterruptedException ex){}
+                _appID = appID;
+                _appKey = appKey;
+                _appMainActivity = mainActivity;
+                _appContext = mainActivity.getApplicationContext();
+                // MANDATORY VALUE.
+                try {
+                    AdManager.USER_AGENT = UserAgentHelper.GetUserAgent(_appContext, layoutRoot).get();
+                } catch (ExecutionException ex) {
+                } catch (InterruptedException ex) {
+                }
 
-            //PreferencesHandler appSettings = new PreferencesHandler(mainActivity);
-            // Initialize settings
-            settings = new SettingsHelperSDK(mainActivity);
-            settings.initSettings();
-            SetNetworkConnectionType(); // This is called several times to match the connection type as well as possible.
+                //PreferencesHandler appSettings = new PreferencesHandler(mainActivity);
+                // Initialize settings
+                settings = new SettingsHelperSDK(mainActivity);
+                settings.initSettings();
+                SetNetworkConnectionType(); // This is called several times to match the connection type as well as possible.
 
-            PreferencesHandler appSettings = new PreferencesHandler(mainActivity);
-            // Cannot be initialized more than once / app launch (while it's in memory) or / day (so we try to notify install again and session)
-            DateTime lastLaunch = DateTime.FromFileTimeUtc(appSettings.getPreference(AbstractSettingsHelperSDK.AS20082013DATE_LAST_LAUNCH, long.class));
-            if (!SDKinitialized || (SDKinitialized && lastLaunch.plusHours(12).isBeforeNow())
-                    || !appSettings.getPreference(AbstractSettingsHelperSDK.AS20082013INSTALL_NOTIFIED, boolean.class))
-            {
-                Map<String, Object> mapSettings = new HashMap<String, Object>();
-                mapSettings.put(AbstractSettingsHelperSDK.AS20082013DATE_LAST_LAUNCH, DateTime.now().toString());
-                mapSettings.put(AbstractSettingsHelperSDK.AS20082013NUMBER_OF_LAUNCHES, appSettings.getPreference(AbstractSettingsHelperSDK.AS20082013NUMBER_OF_LAUNCHES, int.class) + 1);//.to.ToFileTimeUtc());
-                //ApplicationData.Current.LocalSettings.Values[AbstractSettingsHelperSDK.AS20082013DATE_LAST_LAUNCH] = DateTime.UtcNow.ToFileTimeUtc();
-                //ApplicationData.Current.LocalSettings.Values[AbstractSettingsHelperSDK.AS20082013NUMBER_OF_LAUNCHES] = (int)ApplicationData.Current.LocalSettings.Values[AbstractSettingsHelperSDK.AS20082013NUMBER_OF_LAUNCHES] + 1;
-                appSettings.storePreference(mapSettings);
-                // Call Web Service to inform that a new download occured (for tracking purpose)
-                initializeDeviceInfo();
-                notifyNewInstall(); // Notify installs + Sessions.
+                PreferencesHandler appSettings = new PreferencesHandler(mainActivity);
+                // Cannot be initialized more than once / app launch (while it's in memory) or / day (so we try to notify install again and session)
+                DateTime lastLaunch = new DateTime(appSettings.getPreference(AbstractSettingsHelperSDK.AS20082013DATE_LAST_LAUNCH, long.class) * 1000);//.getMillis();
+                if (!SDKinitialized || (SDKinitialized && lastLaunch.plusHours(12).isBeforeNow())
+                        || !appSettings.getPreference(AbstractSettingsHelperSDK.AS20082013INSTALL_NOTIFIED, boolean.class)) {
+                    Map<String, Object> mapSettings = new HashMap<String, Object>();
+                    mapSettings.put(AbstractSettingsHelperSDK.AS20082013DATE_LAST_LAUNCH, DateTime.now().toString());
+                    mapSettings.put(AbstractSettingsHelperSDK.AS20082013NUMBER_OF_LAUNCHES, appSettings.getPreference(AbstractSettingsHelperSDK.AS20082013NUMBER_OF_LAUNCHES, int.class) + 1);//.to.ToFileTimeUtc());
+                    //ApplicationData.Current.LocalSettings.Values[AbstractSettingsHelperSDK.AS20082013DATE_LAST_LAUNCH] = DateTime.UtcNow.ToFileTimeUtc();
+                    //ApplicationData.Current.LocalSettings.Values[AbstractSettingsHelperSDK.AS20082013NUMBER_OF_LAUNCHES] = (int)ApplicationData.Current.LocalSettings.Values[AbstractSettingsHelperSDK.AS20082013NUMBER_OF_LAUNCHES] + 1;
+                    appSettings.storePreference(mapSettings);
+                    // Call Web Service to inform that a new download occured (for tracking purpose)
+                    initializeDeviceInfo();
+                    notifyNewInstall(); // Notify installs + Sessions.
 
-                SDKinitialized = true;
-                if (initSDKSuccess != null)
-                {
-                    eventManager.trigger(initSDKSuccess);//(new object(), new EventArgs());
+                    SDKinitialized = true;
+                    if (initSDKSuccess != null) {
+                        eventManager.trigger(initSDKSuccess);//(new object(), new EventArgs());
+                    }
+                }
+            } catch (Exception ex) {
+                if (!SDKinitialized && initSDKFailed != null) {
+                    eventManager.trigger(initSDKFailed);//initSDKFailed(new object(), new EventArgs());
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            if (!SDKinitialized && initSDKFailed != null)
-            {
-                eventManager.trigger(initSDKFailed);//initSDKFailed(new object(), new EventArgs());
-            }
-        }
-
-        return SDKinitialized;
+            return SDKinitialized;
+        });
     }
     protected static ISetupListener setupListener = new DefaultSetupListener();
     public static Event initSDKFailed = new Event<DefaultSetupListener>(){
@@ -314,11 +329,19 @@ public class AdManager extends AbstractAdManager  {
     /// <summary>
     /// Calling this method will show up AdDeals web wall. This will only work for smartphones.
     /// </summary>
-    public async static void showWebWall()
+    public static void showWebWall()
     {
-        try {
-            await Launcher.LaunchUriAsync(new URI(getWallWebLink()));
-        }catch(URISyntaxException ex) {}
+        AsyncHelper.await(initExecutor, () -> {
+            try {
+                Intent webIntent = new Intent().parseUri(getWallWebLink(), Intent.URI_INTENT_SCHEME);
+                webIntent.setAction(Intent.ACTION_VIEW);
+                //Intent webIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://"+bkpUrl));
+                return _appMainActivity.startActivity(webIntent);
+            } catch (URISyntaxException ex) {
+            }
+            return Optional.empty();
+        });
+        return;
     }
 
     /// <summary>
@@ -326,7 +349,7 @@ public class AdManager extends AbstractAdManager  {
     /// </summary>
     /// <param name="mainPageLayout"></param>
     /// <returns></returns>
-    public static Future<AdDealsPopupAd> getPopupAd(ViewGroup mainPageLayout, AdManager.AdKind adKindSupported)
+    public static AdDealsPopupAd getPopupAd(ViewGroup mainPageLayout, AdManager.AdKind adKindSupported)
     {
             //region old
         //ManualResetEvent wait = new ManualResetEvent(false);
@@ -357,19 +380,17 @@ public class AdManager extends AbstractAdManager  {
             {
                 case REWARDEDVIDEOAD:
                 {
-                    adDealsSquareRewardedVideos = new AdDealsPopupAd(mainPageLayout, adKindSupported);
+                    adDealsSquareRewardedVideos = new AdDealsPopupAd(_appContext);//(mainPageLayout, adKindSupported);
                     break;
                 }
 
                 default:
                 {
-                    adDealsSquare = new AdDealsPopupAd(mainPageLayout, adKindSupported);
+                    adDealsSquare = new AdDealsPopupAd(_appContext);//(mainPageLayout, adKindSupported);
                     break;
                 }
             }
-
         }
-
         if (getAdDealsSquare(adKindSupported) != null)
         {
             getAdDealsSquare(adKindSupported).setAdRequested(adKindSupported);
@@ -377,8 +398,7 @@ public class AdManager extends AbstractAdManager  {
             getAdDealsSquare(adKindSupported).setPercentScreenAd(0.94);
             getAdDealsSquare(adKindSupported).setCloseButtonPosition(CloseButtonPosition.ONAD);
         }
-
-        return getAdDealsSquare(adKindSupported);
+        return await(initExecutor, () -> getAdDealsSquare(adKindSupported));
     }
 
         /*public async static Task<boolean> CacheAd(Panel mainPageLayout, AdManager.AdKind adKindSupported)
@@ -405,7 +425,7 @@ public class AdManager extends AbstractAdManager  {
     {
         if (adDealsWall == null)
         {
-            adDealsWall = new AdDealsWall();
+            adDealsWall = new AdDealsWall(_appContext);
         }
 
         return adDealsWall;
@@ -429,13 +449,13 @@ public class AdManager extends AbstractAdManager  {
     {
         if (adPopup != null)
         {
-            return adPopup.getIsOpen();
+            return adPopup.getView().isShown();
         }
         else return false;
     }
 
 
-        #region old
+        //region old
     /// <summary>Allows to set a minimal delay between 2 interstitials. If this delay is not reached, then an Event: Delay between interstitial not reached is sent. Minimum by default is 3 seconds. It cannot be less than 3 seconds.</summary>
     /// <param name="delay">Minimal delay between two interstitial displays in seconds (Default = 1 display / 3 seconds delay)</param>
     /// <returns>Current delay between interstitial displays</returns>
@@ -445,9 +465,9 @@ public class AdManager extends AbstractAdManager  {
                 return AdDealsSquareViewModel.SetMinDelayBetweenDisplays(delay);
             else return AdDealsSquareViewModel.DEFAULT_DELAY;
         }*/
-        #endregion
+        //endregion
 
-        #endregion
+        //endregion
 
 
 
@@ -489,21 +509,21 @@ public class AdManager extends AbstractAdManager  {
             }
         }
 
-        EasClientDeviceInformation easClientDeviceInformation = new EasClientDeviceInformation();
         try
         {
-            if (!easClientDeviceInformation.SystemManufacturer.ToLower().Equals("system manufacturer")
-                    && !easClientDeviceInformation.SystemProductName.ToLower().Equals("system product name"))
             {
-                DEVICE_MODEL = easClientDeviceInformation.SystemManufacturer + "|" +
-                        easClientDeviceInformation.SystemProductName;
+                DEVICE_MODEL = Build.MANUFACTURER + "|" + Build.MODEL;
             }
         }
         catch (Exception ex) { }
 
         try
         {
-            MOBILE_OPERATOR = StringHelper.Empty;   // Unable to get with Windows 8.1.
+            //MOBILE_OPERATOR = StringHelper.Empty;   // Unable to get with Windows 8.1.
+            // Get System TELEPHONY service reference
+            TelephonyManager tManager = (TelephonyManager) _appContext.getSystemService(Context.TELEPHONY_SERVICE);
+            MOBILE_OPERATOR = tManager.getNetworkOperatorName();
+
         }
         catch (Exception ex) { }
 
@@ -566,11 +586,11 @@ public class AdManager extends AbstractAdManager  {
 
         try
         {
-            if (USER_AGENT.toLowerCase().contains("windows phone") && easClientDeviceInformation.OperatingSystem.ToLower().Equals("windowsphone"))
+            if (USER_AGENT.toLowerCase().contains("mobile") && /*_appContext.getResources().getBoolean*/Resources.getSystem().getBoolean(android.R.bool.isTablet))
             {
                 AdManager.setDeviceKind(DeviceType.PHONE);
             }
-            else if (USER_AGENT.toLowerCase().contains("windows") && easClientDeviceInformation.OperatingSystem.ToLower().Equals("windows"))
+            else if (!USER_AGENT.toLowerCase().contains("mobile") && Resources.getSystem().getBoolean(android.R.bool.isTablet))
             {
                 AdManager.setDeviceKind(DeviceType.TABLET_PC);
             }
@@ -596,40 +616,56 @@ public class AdManager extends AbstractAdManager  {
         catch (Exception ex) { }
     }
 
-
     // http://www.guruumeditation.net/blog/internet-connection-type-detection-in-winrt
     private static void SetNetworkConnectionType()
     {
         // Default value.
         APP_CONNECTION = "CELLULAR_UNKNOWN";
-        int a = _appContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-        //_appMainActivity.getActiveNetworkInfo()
-        ConnectionProfile currentconnection = NetworkInfo.DetailedState();
+        ConnectivityManager cm = (ConnectivityManager) _appContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo currentconnection = cm.getActiveNetworkInfo();
+        ///int a = _appContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+        //_appMainActivity.getActiveNetworkInfo().
         if (currentconnection != null) {
             //  return "";
-            switch (currentconnection.NetworkAdapter.IanaInterfaceType)
+            switch (currentconnection.getType()) //currentconnection.NetworkAdapter.IanaInterfaceType)
             {
-                case 6:
+                case ConnectivityManager.TYPE_ETHERNET:
                     APP_CONNECTION = "ETHERNET";
                     break;
 
-                case 71:
+                case ConnectivityManager.TYPE_WIFI:
                     APP_CONNECTION = "WIFI";
                     break;
 
-                case 216:
-                    APP_CONNECTION = "GPRS";
+                case ConnectivityManager.TYPE_MOBILE:
+                    switch(currentconnection.getSubtype()){
+                            case TelephonyManager.NETWORK_TYPE_GPRS:
+                                APP_CONNECTION = "GPRS";
+                                break;
+                            case TelephonyManager.NETWORK_TYPE_EDGE:
+                            case TelephonyManager.NETWORK_TYPE_CDMA:
+                            case TelephonyManager.NETWORK_TYPE_1xRTT:
+                            case TelephonyManager.NETWORK_TYPE_IDEN: //api<8 : replace by 11
+                                APP_CONNECTION = "2G";
+                                break;
+                            case TelephonyManager.NETWORK_TYPE_UMTS:
+                            case TelephonyManager.NETWORK_TYPE_EVDO_0:
+                            case TelephonyManager.NETWORK_TYPE_EVDO_A:
+                            case TelephonyManager.NETWORK_TYPE_HSDPA:
+                            case TelephonyManager.NETWORK_TYPE_HSUPA:
+                            case TelephonyManager.NETWORK_TYPE_HSPA:
+                            case TelephonyManager.NETWORK_TYPE_EVDO_B: //api<9 : replace by 14
+                            case TelephonyManager.NETWORK_TYPE_EHRPD:  //api<11 : replace by 12
+                            case TelephonyManager.NETWORK_TYPE_HSPAP:  //api<13 : replace by 15
+                                APP_CONNECTION = "3G";
+                                break;
+                            case TelephonyManager.NETWORK_TYPE_LTE:    //api<11 : replace by 13
+                                APP_CONNECTION = "4G";
+                                break;
+                        }
                     break;
-
-                case 243:
-                    APP_CONNECTION = "3G";
-                    break;
-
-                case 244:
-                    APP_CONNECTION = "4G";
-                    break;
+                    }
             }
-        }
     }
 
     private static void notifyNewInstall()
@@ -642,7 +678,7 @@ public class AdManager extends AbstractAdManager  {
     }
 
     // To finish up, notify user session to addeals server...
-    private async static void notifyNewSession(int sessionTypeID)
+    private /*async*/ static void notifyNewSession(int sessionTypeID)
     {
         try
         {
@@ -673,7 +709,8 @@ public class AdManager extends AbstractAdManager  {
             sessionURL = sessionURL + "&" + DateTime.now().ToFileTimeUtc();                       // Reload new deal (caching issue)!
 
             // Get ADSession result...
-            AppSession appSession = /*await*/ httpHelperAsync.get(sessionURL).getResponseEntity(new GsonConverter(),AppSession.class);
+            final String _sessionURL = sessionURL;
+            AppSession appSession = AsyncHelper.await(initExecutor, () -> httpHelperAsync.get(_sessionURL).getResponseEntity(new GsonConverter(),AppSession.class));
             if (appSessionSourceDetected != null)
             {
                 eventManager.trigger(appSessionSourceDetected);//(appSession, new EventArgs());
@@ -694,7 +731,7 @@ public class AdManager extends AbstractAdManager  {
         return hashedString;
     }
     */
-    private /*static*/ void callInstallWebService()
+    private static void callInstallWebService()
     {
         // Call Rest Web Services
         HttpHelperAsync httpHelperAsync = new HttpHelperAsync(AbstractAdManager.HTTP_QUERY_TIMEOUT);
@@ -720,10 +757,10 @@ public class AdManager extends AbstractAdManager  {
             installURL = installURL.replace("[APP_CONNECTION]", APP_CONNECTION);
             installURL = installURL.replace("[ADVERTISER_UID]", ADVERTISER_UID);
             installURL = installURL.replace("[USR_AGENT]", USER_AGENT);
-
+            final String _installURL = installURL;
             try
             {
-                AppInstall conversion = /*await*/ httpHelperAsync.get(installURL).getResponseEntities(new GsonConverter(), AppInstall.class);
+                AppInstall conversion = AsyncHelper.await(initExecutor, () -> httpHelperAsync.get(_installURL).getResponseEntity(new GsonConverter(), AppInstall.class));
                 if (conversion != null)
                 {
                     settings.setSettingKey(AbstractSettingsHelperSDK.AS20082013INSTALL_NOTIFIED,true);
@@ -784,18 +821,18 @@ public class AdManager extends AbstractAdManager  {
             else return false;
         }*/
 
-     static AdDealsPopupAdViewModel getPopupViewModel(AdKind adkind)
+    public static AdDealsPopupAdViewModel getPopupViewModel(AdKind adkind)
     {
         switch (adkind)
         {
             case REWARDEDVIDEOAD:
             {
-                return ( popupRewardedVideoAdViewModel != null) ?  popupRewardedVideoAdViewModel : new AdDealsPopupAdViewModel();
+                return ( popupRewardedVideoAdViewModel != null) ?  popupRewardedVideoAdViewModel : new AdDealsPopupAdViewModel(_appContext);
             }
 
             default:
             {
-                return ( popupAdViewModel != null) ?  popupAdViewModel : new AdDealsPopupAdViewModel();
+                return ( popupAdViewModel != null) ?  popupAdViewModel : new AdDealsPopupAdViewModel(_appContext);
             }
         }
     }
@@ -823,11 +860,11 @@ public class AdManager extends AbstractAdManager  {
      static AdDealsWallViewModel getAdDealsWallViewModel()
     {
         // Delay creation of the view model until necessary
-        return StringHelper.isNullOrEmpty(wallViewModel) ? new AdDealsWallViewModel() : wallViewModel;
+        return wallViewModel == null ? new AdDealsWallViewModel(_appContext) : wallViewModel;
     }
 
 
-        #region general properties
+    //region general properties
 
     private static boolean _disableHeaderWebLink = false;
     public static boolean getDisableHeaderWebLink()
@@ -910,15 +947,17 @@ public class AdManager extends AbstractAdManager  {
         }
     }
 
-        #endregion
+    //endregion
 
-    static async void OpenMarketPlace(String webLink)
+    public static /*async*/ void openMarketPlace(String webLink)
     {
         try
         {
-            await Launcher.LaunchUriAsync(new URI(webLink));
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(Uri.parse(webLink));
+            AsyncHelper.await(initExecutor, () -> _appMainActivity.startActivity(intent));//Launcher.LaunchUriAsync(new URI(webLink)));
         }
-        catch (Exception) { }
+        catch (Exception ex) { }
     }
 
 }
